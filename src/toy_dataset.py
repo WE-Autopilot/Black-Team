@@ -21,7 +21,10 @@ class PixelIndexer(Dataset):
         one_hot[y, x] = 1
 
         # Return one-hot matrix and (x, y) coordinate tensor
-        return one_hot, torch.tensor([x, y])
+        return one_hot[None, ...], torch.tensor([x, y])
+
+    def __len__(self):
+        return self.total_pixels
 
 if __name__ == "__main__":
     indexer = PixelIndexer(4, 3)
