@@ -1,6 +1,7 @@
 import torch as pt
 from torch.optim import AdamW
 from sal import SAL
+from ppo_utils import ppo_update
 from toy_dataset import PixelIndexer
 from torch.utils.data import DataLoader, random_split
 from tqdm import tqdm
@@ -38,12 +39,12 @@ def plot_images_with_points(images, points, path):
 
 
 batch_size = 64
-epochs = 100
+epochs = 1000
 
 device = pt.device("cuda" if pt.cuda.is_available() else "cpu") #determine device.
 
 sal = SAL(num_points=1).to(device) #move model to device.
-optimizer = AdamW(sal.parameters(), lr=1e-4)
+optimizer = AdamW(sal.parameters(), lr=1e-5)
 dataset = PixelIndexer(32, 32)
 dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
 
@@ -60,13 +61,13 @@ for i in pbar:
         pos = pt.zeros(len(images), 2).to(device) #move pos to device.
 
         dist, value = sal(images, pos)
-        log_probs = dist.log_prob(target)
+        actions = dist.sample()
+        log_probs = dist.log_prob(actions)
 
-        loss = -log_probs.mean()
+        loss = pt.linalg.norm(actions - target, dim=-1)
+        advantages = loss - value
 
-        optimizer.zero_grad()
-        loss.backward()
-        optimizer.step()
+        ppo_update(sal, optimizer, images, pos, actions, log_probs.detach(), loss.detach(), advantages.detach(), entropy_coef=0.1, mini_batch_size=batch_size, epochs=8)
 
         total_loss += loss.mean().item()
 
@@ -74,8 +75,8 @@ for i in pbar:
     pbar.set_postfix(L=f"{avg_loss:.2f}")
     losses.append(avg_loss)
 
-    actions = dist.sample()
-    plot_images_with_points(images[:, 0].detach().cpu(), actions.detach().cpu(), f"graphs/{i}.png") #move data back to cpu for plotting.
+    if i % 25 == 0:
+        plot_images_with_points(images[:, 0].detach().cpu(), actions.detach().cpu(), f"graphs/{i}.png") #move data back to cpu for plotting.
 
 plt.plot(losses)
 plt.savefig("graphs/losses.png")
