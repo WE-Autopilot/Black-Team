@@ -2,6 +2,7 @@ import h5py as hp
 import numpy as np
 import torch as pt
 from torch.utils.data import Dataset
+import matplotlib.pyplot as plt
 
 
 def rotate_path(path, angle):
@@ -15,7 +16,17 @@ def rotate_path(path, angle):
     return rotated_path
 
 
-class H5Dataset(Dataset):
+def show_path(img, paths):
+    plt.imshow(img[0], origin="lower")
+
+    for path in paths:
+        waypoints = np.cumsum(np.append(np.zeros(2), path).reshape(-1, 2), axis=-2) * 10 + np.array([128, 128])
+        plt.plot(*waypoints.T)
+
+    plt.show()
+
+
+class Stage0Dataset(Dataset):
     def __init__(self, h5_path, path_inds=np.arange(16)):
         super().__init__()
         self.path_inds = path_inds
@@ -63,9 +74,8 @@ class H5Dataset(Dataset):
 
 
 if __name__ == "__main__":
-    import matplotlib.pyplot as plt
 
-    dataset = H5Dataset("dataset.h5")
+    dataset = Stage0Dataset("dataset.h5")
     img, path = dataset[0]  
 
     print(f"Dataset length: len(dataset)")
@@ -75,8 +85,4 @@ if __name__ == "__main__":
     for i in range(len(dataset)):
         img, path = dataset[i]  
 
-        waypoints = np.cumsum(np.append(np.zeros(2), path).reshape(-1, 2), axis=0) * 10 + np.array([128, 128])
-
-        plt.imshow(img[0], origin="lower")
-        plt.plot(*waypoints.T)
-        plt.show()
+        show_path(img, [path])
