@@ -10,13 +10,15 @@ from tqdm import tqdm
 num_beams = 1080
 fov = 2 * np.pi
 map_ext = '.png'
-interval = 1
+interval = 10
 dataset_path = "dataset.h5"
 
 map_paths = sorted(glob("maps/*.yaml"))
 scan_sim = ScanSimulator2D(num_beams, fov)
 
 with hp.File(dataset_path, "w") as file:
+
+    file.create_dataset("interval", data=interval)
 
     for map_path in tqdm(map_paths, desc="Scanning...", unit="map"):
         map_id = map_path.replace("maps/", "").replace(".yaml", "")
