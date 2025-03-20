@@ -21,8 +21,10 @@ class H5Dataset(Dataset):
         self.path_inds = path_inds
         self.h5_path = h5_path
         self.file = hp.File(h5_path, 'r')
+        self.interval = self.file["interval"][()]
         self.dataset_names = list(self.file.keys())
-        self.dataset_lengths = [len(self.file[name]["paths"]) for name in self.dataset_names]
+        self.dataset_names.remove("interval")
+        self.dataset_lengths = [len(self.file[name]["lidar"]) for name in self.dataset_names]
         self.cumulative_lengths = np.cumsum(self.dataset_lengths)
         self.total_length = self.cumulative_lengths[-1]
 
@@ -39,10 +41,14 @@ class H5Dataset(Dataset):
 
         dataset_name = self.dataset_names[dataset_ind]
         dataset_length = self.dataset_lengths[dataset_ind]
-        path_inds = (self.path_inds + dataset_inner_ind) % dataset_length
+        num_path = len(self.file[dataset_name]["paths"])
+        path_start = dataset_inner_ind * self.interval
+        path_inds = (self.path_inds + path_start) % num_path
+        #print(path_inds)
 
+        #print(dataset_name, dataset_inner_ind)
         raw_lidar = self.file[dataset_name]["lidar"][dataset_inner_ind]
-        raw_path = self.file[dataset_name]["paths"][path_inds]
+        raw_path = self.file[dataset_name]["paths"][:][path_inds]
 
         lidar = raw_lidar[None, ...]
 
@@ -60,13 +66,17 @@ if __name__ == "__main__":
     import matplotlib.pyplot as plt
 
     dataset = H5Dataset("dataset.h5")
-    img, path = dataset[118]  
+    img, path = dataset[0]  
 
-    print(len(dataset))
+    print(f"Dataset length: len(dataset)")
     print(img.shape)  
     print(path.shape)
 
-    waypoints = np.cumsum(np.append(np.zeros(2), path).reshape(-1, 2), axis=0) * 10 + np.array([128, 128])
-    plt.imshow(img[0], origin="lower")
-    plt.plot(*waypoints.T)
-    plt.show()
+    for i in range(len(dataset)):
+        img, path = dataset[i]  
+
+        waypoints = np.cumsum(np.append(np.zeros(2), path).reshape(-1, 2), axis=0) * 10 + np.array([128, 128])
+
+        plt.imshow(img[0], origin="lower")
+        plt.plot(*waypoints.T)
+        plt.show()
