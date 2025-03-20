@@ -55,6 +55,7 @@ with hp.File(dataset_path, "w") as file:
             pose = np.append(waypoints[waypoint_ind], angle)
 
             scan = scan_sim.scan(pose, np.random.default_rng())
+            # max_scan_radius = 12 to 15ish
             lidar_img = lidar_to_bitmap(scan=scan, channels=1, fov=fov, draw_mode='FILL', bg_color='black', draw_center=False)
             lidar_bitmap = lidar_img / 255
 
