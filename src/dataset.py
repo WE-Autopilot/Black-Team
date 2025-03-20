@@ -66,7 +66,7 @@ if __name__ == "__main__":
     print(img.shape)  
     print(path.shape)
 
-    waypoints = np.cumsum(np.append(np.zeros(2), path).reshape(-1, 2), axis=0) * 16 + np.array([128, 128])
+    waypoints = np.cumsum(np.append(np.zeros(2), path).reshape(-1, 2), axis=0) * 10 + np.array([128, 128])
     plt.imshow(img[0], origin="lower")
     plt.plot(*waypoints.T)
     plt.show()
