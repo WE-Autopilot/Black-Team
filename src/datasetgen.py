@@ -18,7 +18,7 @@ args = parser.parse_args()
 
 num_beams = args.num_beams
 fov = args.fov
-map_ext = args.map_ext
+map_ext = ".png"
 interval = args.interval
 dataset_path = args.dataset_path
 maps_path = args.maps_path
