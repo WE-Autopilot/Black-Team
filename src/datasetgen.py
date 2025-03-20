@@ -11,8 +11,8 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--num_beams", type=float, default=1080, help="Number of beams used by lidar scan.")
 parser.add_argument("--fov", type=float, default=2 * np.pi, help="FOV of lidar scan.")
 parser.add_argument("--interval", type=int, default=1, help="Skips by intervals when scanning waypoints.")
-parser.add_argument("--dataset_path", type=string, default="dataset.h5", help="Specify path to save dataset (e.g. dataset.h5).")
-parser.add_argument("--maps_path", type=string, default="./", help="Specify path to read maps (e.g. ./).")
+parser.add_argument("--dataset_path", type=str, default="dataset.h5", help="Specify path to save dataset (e.g. dataset.h5).")
+parser.add_argument("--maps_path", type=str, default="./", help="Specify path to read maps (e.g. ./).")
 args = parser.parse_args()
 
 
