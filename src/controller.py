@@ -18,7 +18,7 @@ class Controller(AbstractController):
 
         bitMap = lidar_to_bitmap(obs['scans'][0])
 
-        speed, steer = self.pilot.get_actuation(obs, bitMap)
+        speed, steer = self.pilot.get_actuation(obs, bitMap, self.conf_dict)
 
         return speed, steer, self.pilot.waypoints
 

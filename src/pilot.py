@@ -3,6 +3,8 @@ import torch as pt
 from sal import SAL
 from pure_pursuit import PurePursuitPlanner
 
+TEST_MODE = True
+
 def is_near_last_waypoint(position, waypoints, threshold=1.0):
     """
     Checks if the vehicle is near the 8th waypoint.
@@ -60,7 +62,7 @@ class Pilot:
         self.actuation = np.zeros(2)
         self.waypoints = np.empty((0, 2))
 
-    def get_actuation(self, obs, bitMap):
+    def get_actuation(self, obs, bitMap, config_dict=None):
         current_x = obs['poses_x'][0]
         current_y = obs['poses_y'][0]
         current_theta = obs['poses_theta'][0]
@@ -70,9 +72,19 @@ class Pilot:
 
         position = np.array([current_x, current_y])
 
-        if is_near_last_waypoint(position, self.waypoints):
-            sal_path = self.sal(bitMap, current_vel)
-            self.waypoints = convert_to_global_waypoints(sal_path, current_x, current_y, current_theta, 0.0625)
-            self.actuation = self.planner.plan(current_x, current_y, current_theta, self.waypoints)
-        
+        if is_near_last_waypoint(position, self.waypoints) or self.waypoints.shape[0] == 0:
+            if config_dict is None:
+                sal_path = self.sal(bitMap, current_vel)
+                self.waypoints = convert_to_global_waypoints(sal_path, current_x, current_y, current_theta, 0.0625)
+                self.actuation = self.planner.plan(current_x, current_y, current_theta, self.waypoints)
+            else:
+                all_waypoints = np.loadtxt(
+                    config_dict["wpt_path"],
+                    delimiter=config_dict["wpt_delim"],
+                    skiprows=config_dict["wpt_rowskip"],
+                    usecols=[0, 1]
+                )
+                self.waypoints = all_waypoints[:16]
+                self.actuation = self.planner.plan(current_x, current_y, current_theta, self.waypoints)
+            
         return self.actuation

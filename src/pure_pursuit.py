@@ -121,7 +121,6 @@ def get_actuation(pose_theta, lookahead_point, position, lookahead_distance, whe
 """
 Pure Pursuit Planner Class
 """
-
 class PurePursuitPlanner:
     """
     This planner computes control commands using a traditional pure pursuit approach,
@@ -163,6 +162,21 @@ class PurePursuitPlanner:
             return wpts[i, :]
         else:
             return None
+
+    def calculate_segment_speed(self, waypoints):
+        """
+        Computes the constant speed for the current segment.
+        For the segment from Pᵢ to Pᵢ₊₁, the speed is:
+              v = ||Pᵢ₊₁ - Pᵢ|| / segment_period
+        If the current segment index is invalid, returns a default speed.
+        """
+        idx = self._current_segment_index
+        if idx is None or idx >= waypoints.shape[0] - 1:
+            return 0.0
+        p_current = waypoints[idx, :2]
+        p_next = waypoints[idx + 1, :2]
+        segment_distance = np.linalg.norm(p_next - p_current)
+        return segment_distance / self.segment_period
 
     def plan(self, pose_x, pose_y, pose_theta, waypoints):
         """
