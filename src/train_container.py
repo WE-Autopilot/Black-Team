@@ -121,16 +121,17 @@ def train_run(model, config_path, sx, sy, stheta, render_on=True):
         current_waypoints_global = current_waypoints
     print("crashed\n\n\n" if obs["collisions"] else "done\n\n\n")
 
-    lidar_scans = pt.cat(model.lidar_scans, dim=0)
-    velocities = pt.cat(model.velocities, dim=0)
-    paths = pt.cat(model.paths, dim=0)
-    log_probs = pt.cat(model.log_probs, dim=0)
-    costs = pt.cat(model.costs, dim=0)
-    advantages = pt.cat(model.advantages, dim=0)
+    # lidar_scans = pt.cat(model.lidar_scans, dim=0)
+    # velocities = pt.cat(model.velocities, dim=0)
+    # paths = pt.cat(model.paths, dim=0)
+    # log_probs = pt.cat(model.log_probs, dim=0)
+    # costs = pt.cat(model.costs, dim=0)
+    # advantages = pt.cat(model.advantages, dim=0)
     
-    print(lidar_scans.shape, velocities.shape, paths.shape, log_probs.shape, costs.shape, advantages.shape)
-    print(lidar_scans.isnan().any(), velocities.isnan().any(), paths.isnan().any(), log_probs.isnan().any(), costs.isnan().any(), advantages.isnan().any())
-    ppo_update(model.sal, model.optimizer, lidar_scans, velocities, paths, log_probs.detach(), costs.detach(), advantages.detach(), mini_batch_size=16, epochs=8)
+    # print(lidar_scans.shape, velocities.shape, paths.shape, log_probs.shape, costs.shape, advantages.shape)
+    # print(lidar_scans.isnan().any(), velocities.isnan().any(), paths.isnan().any(), log_probs.isnan().any(), costs.isnan().any(), advantages.isnan().any())
+    # ppo_update(model.sal, model.optimizer, lidar_scans, velocities, paths, log_probs.detach(), costs.detach(), advantages.detach(), mini_batch_size=16, epochs=8)
+    
     #print(len(model.lidar_scans), len(model.velocities), len(model.paths), len(model.log_probs), len(model.costs), len(model.advantages))
     
     # print('Sim elapsed time:', laptime, 'Real elapsed time:', time.time() - start)
