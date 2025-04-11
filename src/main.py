@@ -43,7 +43,7 @@ def training_mode():
             with open(yaml_path) as file:
                 conf_dict = yaml.safe_load(file)
 
-            waypoints = np.loadtxt(csv_path, delimiter=";", skiprows=1, usecols=[0,1,3])
+            waypoints = np.loadtxt(csv_path, delimiter=",")
             starting_wpts = waypoints[::32]
 
             train_run(controller, maps_folder+"/"+track_name, ".png", waypoints, starting_wpts, True)
