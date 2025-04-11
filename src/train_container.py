@@ -57,25 +57,24 @@ def train_run(model, map_path, map_ext, waypoints, starting_wpts, render_on=True
 
         start = time.time()
 
+        time_limit = 10.0  # seconds
+
         # Main simulation loop.
         while not done:
             # Update the global variable for rendering.
             
             obs, step_reward, done, _ = env.step(np.array([[steer, speed]]))
-            #sleep(0.1)
+
             laptime += step_reward
             if render_on:
                 env.render(mode='human')
 
-            if speed == 0:
-                done = True
-                obs["collisions"][0] = 1
-                print("\n\n\nafk kicked ", end="")
-                
+            if laptime > time_limit:
+                break
+
             speed, steer = model.compute(obs)
 
-        # Calculate reward function
-        # Call PPO
+
 
         # TRIAL FINISHED
         print("crashed" if obs["collisions"] else "done", end="\n\n\n")
@@ -88,3 +87,4 @@ def train_run(model, map_path, map_ext, waypoints, starting_wpts, render_on=True
         """
 
         return wpts_crossed
+    
