@@ -17,7 +17,11 @@ class ScanSAL(nn.Module):
 
         # Fully connected layers using Sequential
         self.fc_layers = nn.Sequential(
-            nn.Linear(1080, 512),
+            nn.Linear(1080, 1024),
+            nn.ReLU(),
+            nn.Linear(1024, 1024),
+            nn.ReLU(),
+            nn.Linear(1024, 512),
             nn.ReLU(),
             nn.Linear(512, 256),
             nn.ReLU(),

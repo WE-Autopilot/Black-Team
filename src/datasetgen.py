@@ -33,22 +33,17 @@ with hp.File(dataset_path, "w") as file:
     for map_path in tqdm(map_paths, desc="Scanning...", unit="map"):
         map_id = map_path.replace(f"{maps_path}maps/", "").replace(".yaml", "")
 
-        file.create_group(map_id)
-        file_group = file[map_id]
 
         scan_sim.set_map(map_path, map_ext)
-        csv_path = f"{maps_path}centerline/{map_id}.csv"
+        csv_path = f"{maps_path}maps/{map_id}.csv"
         waypoints = np.loadtxt(csv_path, delimiter=",")
         path_vecs = np.roll(waypoints, -1, axis=0) - waypoints
 
         num_waypoints = len(waypoints)
         num_startpoints = num_waypoints // interval
 
-        file_group.create_dataset("paths", data=path_vecs, chunks=None)
-        file_group.create_dataset("lidar", shape=(num_startpoints, 256, 256), dtype="i1", chunks=None)
-        lidar_dataset = file_group["lidar"]
-        file_group.create_dataset("scan", shape=(num_startpoints, num_beams), dtype="f8", chunks=None)
-        scan_dataset = file_group["scan"]
+        file.create_dataset(map_id, shape=(num_startpoints, num_beams), dtype="f4", chunks=None)
+        scan_dataset = file[map_id]
 
         for start_ind in range(num_startpoints):
             waypoint_ind = start_ind * interval
@@ -57,9 +52,5 @@ with hp.File(dataset_path, "w") as file:
             pose = np.append(waypoints[waypoint_ind], angle)
 
             scan = scan_sim.scan(pose, np.random.default_rng())
-            # max_scan_radius = 12 to 15ish
-            lidar_img = lidar_to_bitmap(scan=scan, channels=1, fov=fov, draw_mode='FILL', bg_color='black', draw_center=False)
-            lidar_bitmap = lidar_img / 255
 
             scan_dataset[start_ind] = scan
-            lidar_dataset[start_ind] = lidar_bitmap

@@ -10,16 +10,22 @@ import h5py as hp
 import numpy as np
 
 
-batch_size = 64
-epochs = 10
+batch_size = 2 ** 10
+epochs = 3
+velocity = 1
 
 device = pt.device("cuda" if pt.cuda.is_available() else "cpu")
 
-sal = SAL(num_points=16).to(device)
-state_dict = pt.load("backup.ckpt", map_location=device)
-sal.load_state_dict(state_dict)
+sal = SAL(1080).to(device)
+try:
+    1/0
+    state_dict = pt.load("backup.ckpt", map_location=device)
+    sal.load_state_dict(state_dict)
+    print(f"Loading backup model on {device}")
+except:
+    print(f"Loading blank model on {device}")
 optimizer = AdamW(sal.parameters(), lr=1e-4)
-dataset = Stage0Dataset("dataset.h5", np.arange(16))
+dataset = Stage0Dataset("dataset.h5")
 dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
 
 losses = []
@@ -27,12 +33,14 @@ pbar = tqdm(range(epochs), desc="training...", unit="epoch")
 for i in pbar:
     total_loss = 0
     pbar1 = tqdm(dataloader, desc=f"E{i}", unit="batch")
-    for images, target in pbar1:
-        images = images.to(device)
+    for scans, target in pbar1:
+        scans = scans.to(device)
+        target = target.unsqueeze(1)
+        vel = pt.full_like(target, velocity)
+        target = pt.cat((target, vel), dim=1)
         target = target.to(device)
-        pos = pt.zeros(len(images), 2).to(device)
 
-        dist, value = sal(images, pos)
+        dist, value = sal(scans)
         log_probs = dist.log_prob(target)
 
         loss = -log_probs.mean()

@@ -16,6 +16,7 @@ device = pt.device("cuda" if pt.cuda.is_available() else "cpu")
 
 sal = ScanSAL(num_points=16).to(device)
 try:
+    1/0
     state_dict = pt.load("backup.ckpt", map_location=device)
     sal.load_state_dict(state_dict)
     print(f"Loaded backup model on {device}")
