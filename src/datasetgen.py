@@ -8,6 +8,16 @@ from tqdm import tqdm
 import argparse
 import yaml
 
+
+def gen_perp_points(curr_wp, next_wp, num_points=10, min_dis=-1.5, max_dis=1.5):
+    vector = next_wp - curr_wp
+    perp = np.array([-vector[1], vector[0]])
+    unit_perp = perp / np.linalg.norm(perp)
+    distances = np.random.uniform(min_dis, max_dis, num_points)
+    points = curr_wp + unit_perp * distances[:, np.newaxis]
+    return points
+
+
 parser = argparse.ArgumentParser()
 parser.add_argument("--num_beams", type=float, default=1080, help="Number of beams used by lidar scan.")
 parser.add_argument("--fov", type=float, default=2 * np.pi, help="FOV of lidar scan.")
@@ -23,8 +33,10 @@ map_ext = ".png"
 interval = args.interval
 dataset_path = args.dataset_path
 maps_path = args.maps_path
+
 num_points = 10
 spread = 1.5
+lookahead = 5
 
 map_paths = sorted(glob(f"{maps_path}maps/*.yaml"))
 scan_sim = ScanSimulator2D(num_beams, fov)
@@ -53,14 +65,15 @@ with hp.File(dataset_path, "w") as file:
         for start_ind in range(num_startpoints):
 
             waypoint_ind = start_ind * interval
+            curr_wp = waypoints[waypoint_ind]
+            next_wp = waypoints[(waypoint_ind + lookahead) % len(waypoints)]
 
-            points = np.random.uniform(-1, 1, (num_points, 2))
-            points = points / np.linalg.norm(points, axis=1).max() * spread / resolution + waypoints[waypoint_ind]
+            points = gen_perp_points(curr_wp, next_wp, num_points=10, min_dis=-1.5, max_dis=1.5)
 
             for point_ind, point in enumerate(points):
-                path_vec = waypoints[(waypoint_ind + 1) % len(waypoints)] - point
-                angle = np.arctan2(*path_vec)
-                pose = np.append(waypoints[waypoint_ind], angle)
+                path_vec = next_wp - point
+                angle = np.arctan2(*path_vec[::-1])
+                pose = np.append(point, angle)
 
                 scan = scan_sim.scan(pose, np.random.default_rng())
 
