@@ -40,16 +40,14 @@ import argparse
 parser = argparse.ArgumentParser()
 parser.add_argument('--seed', type=int, default=123, help='Seed for the numpy rng.')
 parser.add_argument('--num_maps', type=int, default=1, help='Number of maps to generate.')
+parser.add_argument('--path', type=int, default=1, help='Number of maps to generate.')
 args = parser.parse_args()
 
 np.random.seed(args.seed)
 
-# if not os.path.exists('maps'):
-#     print('Creating maps/ directory.')
-#     os.makedirs('maps')
-# if not os.path.exists('centerline'):
-#     print('Creating centerline/ directory.')
-#     os.makedirs('centerline')
+if not os.path.exists(os.path + 'maps'):
+    print('Creating maps/ directory.')
+    os.makedirs(os.path + 'maps')
 
 NUM_MAPS = args.num_maps
 WIDTH = 10.0
@@ -190,7 +188,7 @@ def convert_track(track, track_int, track_ext, iter):
     ax.set_xlim(-180, 300)
     ax.set_ylim(-300, 300)
     plt.axis('off')
-    plt.savefig('map' + str(iter) + '.png', dpi=80)
+    plt.savefig(os.path + 'maps/map' + str(iter) + '.png', dpi=80)
 
     map_width, map_height = fig.canvas.get_width_height()
     print('map size: ', map_width, map_height)
@@ -206,15 +204,15 @@ def convert_track(track, track_int, track_ext, iter):
     map_origin_y = -origin_y_pix*0.05
 
     # convert image using cv2
-    cv_img = cv2.imread('map' + str(iter) + '.png', -1)
+    cv_img = cv2.imread(os.path + 'maps/map' + str(iter) + '.png', -1)
     # convert to bw
     cv_img_bw = cv2.cvtColor(cv_img, cv2.COLOR_BGR2GRAY)
     # saving to img
-    cv2.imwrite('map' + str(iter) + '.png', cv_img_bw)
-    cv2.imwrite('map' + str(iter) + '.pgm', cv_img_bw)
+    cv2.imwrite(os.path + 'maps/map' + str(iter) + '.png', cv_img_bw)
+    cv2.imwrite(os.path + 'maps/map' + str(iter) + '.pgm', cv_img_bw)
 
     # create yaml file
-    yaml = open('map' + str(iter) + '.yaml', 'w')
+    yaml = open(os.path + 'maps/map' + str(iter) + '.yaml', 'w')
     yaml.write('image: map' + str(iter) + '.pgm\n')
     yaml.write('resolution: 0.062500\n')
     yaml.write('origin: [' + str(map_origin_x) + ',' + str(map_origin_y) + ', 0.000000]\n')
@@ -223,7 +221,7 @@ def convert_track(track, track_int, track_ext, iter):
     plt.close()
 
     # saving track centerline as a csv in ros coords
-    waypoints_csv = open('map' + str(iter) + '.csv', 'w')
+    waypoints_csv = open(os.path + 'maps/map' + str(iter) + '.csv', 'w')
     for row in xy_pixels:
         waypoints_csv.write(str(0.05*row[0]) + ', ' + str(0.05*row[1]) + '\n')
     waypoints_csv.close()
