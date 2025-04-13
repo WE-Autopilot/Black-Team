@@ -32,11 +32,11 @@ def train_run(model, map_path, map_ext, waypoints, starting_wpts, render_on=True
                    timestep=0.01,
                    integrator=Integrator.RK4)
     
-    for sx, sy, stheta in starting_wpts:
+    for sx, sy in starting_wpts:
         model.startup()
         # Reset environment and get initial observation.
         # obs, step_reward, done, info = env.reset(np.array([[0, 0, 0]]))
-        obs, step_reward, done, _ = env.reset(np.array([[sx, sy, stheta]]))
+        obs, step_reward, done, _ = env.reset(np.array([[sx, sy, 0]]))
         # Retrieve lap count for the ego agent.
         # The environment's lap_counts is assumed to be a list or array (one entry per agent).
         lap_count = env.lap_counts[env.ego_idx] if hasattr(env, "lap_counts") else 0

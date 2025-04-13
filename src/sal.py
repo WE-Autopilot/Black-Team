@@ -33,7 +33,7 @@ class SAL(nn.Module):
         return dist, x[:, -1]
 
     def load(self, path):
-        state_dict = pt.load(path, map_location=self.device)
+        state_dict = pt.load(path, map_location="cpu")
         self.load_state_dict(state_dict)
 
     def save(self, path):
