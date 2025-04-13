@@ -36,7 +36,9 @@ class Controller(AbstractController):
 
         action = dist.sample()
 
-        [[speed, steer]] = action.tolist()
+        [[speed, relative_theta]] = action.tolist()
+        current_theta = obs['poses_theta'][0]
+        steer = relative_theta + current_theta
 
         self.values.append(val.item())
         self.actions.append(action)
