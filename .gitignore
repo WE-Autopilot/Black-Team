@@ -5,4 +5,5 @@ __pycache__
 assets/
 filter_columns.py
 
-src/*.ckpt
+*.ckpt
+*.h5
