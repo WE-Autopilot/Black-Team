@@ -33,7 +33,7 @@ class Controller(AbstractController):
         scans = pt.tensor(obs["scans"], dtype=pt.float, device=self.sal.device)
         dist, val = self.sal(scans)
         self.scans.append(scans)
-
+    
         action = dist.sample()
 
         [[speed, steer]] = action.tolist()

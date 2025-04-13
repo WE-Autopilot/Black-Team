@@ -13,7 +13,7 @@ _orig_open = Image.open
 Image.open = lambda *args, **kwargs: _orig_open(*args, **kwargs).convert("RGB").split()[0]
 
 # Enable training mode or normal execution
-TRAIN_MODE = True  # Toggle this flag to switch between training and normal execution
+TRAIN_MODE = False  # Toggle this flag to switch between training and normal execution
 
 def get_track_names(maps_folder):
     """

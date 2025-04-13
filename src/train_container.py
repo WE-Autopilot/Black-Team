@@ -74,8 +74,6 @@ def train_run(model, map_path, map_ext, waypoints, starting_wpts, render_on=True
 
             speed, steer = model.compute(obs)
 
-
-
         # TRIAL FINISHED
         print("crashed" if obs["collisions"] else "done", end="\n\n\n")
         print('Sim elapsed time:', laptime, 'Real elapsed time:', time.time() - start)
@@ -85,6 +83,7 @@ def train_run(model, map_path, map_ext, waypoints, starting_wpts, render_on=True
         """
         Returns the progress of the car from the start position.
         """
+        progress = lambda wps, pos, start : np.argmin(np.linalg.norm(wps - pos, axis=1)) - start
 
-        return wpts_crossed
+        return progress
     
