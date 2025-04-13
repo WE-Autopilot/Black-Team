@@ -40,14 +40,14 @@ import argparse
 parser = argparse.ArgumentParser()
 parser.add_argument('--seed', type=int, default=123, help='Seed for the numpy rng.')
 parser.add_argument('--num_maps', type=int, default=1, help='Number of maps to generate.')
-parser.add_argument('--path', type=int, default=1, help='Number of maps to generate.')
+parser.add_argument('--path', type=int, default="./", help='Path to generate to.')
 args = parser.parse_args()
 
 np.random.seed(args.seed)
 
-if not os.path.exists(path + 'maps'):
+if not os.path.exists(args.path + 'maps'):
     print('Creating maps/ directory.')
-    os.makedirs(path + 'maps')
+    os.makedirs(args.path + 'maps')
 
 NUM_MAPS = args.num_maps
 WIDTH = 10.0
