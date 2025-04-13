@@ -129,11 +129,12 @@ if __name__ == "__main__":
     print(scan.shape)  
     print(angle.shape)
 
-    for i in range(len(dataset)):
-        scan, angle = dataset[i]
+    for i in range(len(dataset) // 512):
+        scan, angle = dataset[i * 512 + 256]
         print(f"{angle / pt.pi * 180:.2f} deg")
         lidar_img = lidar_to_bitmap(scan=scan, channels=1, fov=2 * pt.pi, draw_mode='FILL', bg_color='black', draw_center=False)
         plt.imshow(lidar_img, origin="lower")
+        plt.scatter(128, 128)
         plt.show()
 
 
