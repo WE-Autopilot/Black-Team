@@ -9,7 +9,7 @@ map_path = f"maps/map{index}"
 image = Image.open(f'{map_path}.png')
 with open(f'{map_path}.yaml', 'r') as file:
     config = yaml.safe_load(file)
-waypoints = np.loadtxt(f'centerline/map{index}.csv', delimiter=',', skiprows=0)[:, :2]
+waypoints = np.loadtxt(f'maps/map{index}.csv', delimiter=',', skiprows=0)[:, :2]
 
 origin = np.array(config["origin"])[:2]
 resolution = config["resolution"]
@@ -32,6 +32,7 @@ for coord in coords:
     a = a / np.linalg.norm(a, axis=1).max() * 1.5 / resolution
     b = a + coord
 
+    plt.scatter(*coords.T)
     plt.scatter(*b.T)
     plt.scatter(*coord)
     plt.show()
