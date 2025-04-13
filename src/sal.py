@@ -32,6 +32,13 @@ class SAL(nn.Module):
         dist = Normal(mean, std)
         return dist, x[:, -1]
 
+    def load(self, path):
+        state_dict = pt.load(path, map_location=self.device)
+        self.load_state_dict(state_dict)
+
+    def save(self, path):
+        pt.save(self.state_dict(), path)
+
 
 
 if __name__ == "__main__":
