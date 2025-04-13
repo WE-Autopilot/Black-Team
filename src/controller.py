@@ -12,7 +12,7 @@ def addNoise(obs):
 
 class Controller(AbstractController):
         
-    def __init__(self, path = "model.ckpt") -> None:
+    def __init__(self, path="model.ckpt") -> None:
         super().__init__()
         self.sal = SAL()
         self.sal.load(path)
@@ -31,7 +31,7 @@ class Controller(AbstractController):
         Computes control commands and returns the current set of global waypoints.
         It checks if the vehicle is near the last few waypoints and loads the next batch if needed.
         """
-        scans = pt.tensor(obs["scans"], dtype=pt.float)
+        scans = pt.tensor(obs["scans"][0], dtype=pt.float)[None, ...]
         dist, val = self.sal(scans)
         self.scans.append(scans)
     

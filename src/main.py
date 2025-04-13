@@ -12,9 +12,6 @@ from train_container import train_run
 _orig_open = Image.open
 Image.open = lambda *args, **kwargs: _orig_open(*args, **kwargs).convert("RGB").split()[0]
 
-# Enable training mode or normal execution
-TRAIN_MODE = True  # Toggle this flag to switch between training and normal execution
-
 def get_track_names(maps_folder):
     """
     Returns a list of available track names based on files in the maps folder.
@@ -54,6 +51,10 @@ def normal_mode():
     run(controller, "../assets/maps/map0.yaml", True)
 
 if __name__ == "__main__":
+
+    # Enable training mode or normal execution
+    TRAIN_MODE = True  # Toggle this flag to switch between training and normal execution
+
     if TRAIN_MODE:
         training_mode()
     else:
