@@ -5,10 +5,11 @@ from torch.distributions import Normal
 
 
 class SAL(nn.Module):
-    def __init__(self, num_beams=1080, min_std=1e-4, max_std=2):
+    def __init__(self, num_beams=1080, min_std=1e-4, max_std=2, device="cpu"):
         super().__init__()
         self.min_std = min_std
         self.max_std = max_std
+        self.device = device
 
         # Fully connected layers using Sequential
         self.fc_layers = nn.Sequential(
@@ -24,6 +25,8 @@ class SAL(nn.Module):
             nn.ReLU(),
             nn.Linear(128, 5),
         )
+
+        self.to(device)
 
     def forward(self, x):
         x = self.fc_layers(x)
