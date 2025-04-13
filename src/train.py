@@ -2,7 +2,7 @@ import torch as pt
 from torch.optim import AdamW
 from sal import SAL
 from dataset import Stage0Dataset
-from torch.utils.data import DataLoader, random_split
+from torch.utils.data import DataLoader, random_split, Subset
 from tqdm import tqdm
 import matplotlib.pyplot as plt
 import os
@@ -26,7 +26,12 @@ except:
     print(f"Loading blank model on {device}")
 optimizer = AdamW(sal.parameters(), lr=1e-4)
 dataset = Stage0Dataset("dataset.h5")
-dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
+full_dataset_size = len(dataset)
+subset_size = int(0.1 * full_dataset_size)
+indices = pt.randperm(full_dataset_size).tolist()
+subset_indices = indices[:subset_size]
+subset = Subset(dataset, subset_indices)
+dataloader = DataLoader(subset, batch_size=batch_size, shuffle=True)
 
 losses = []
 pbar = tqdm(range(epochs), desc="training...", unit="epoch")
