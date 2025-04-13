@@ -4,3 +4,5 @@ __pycache__
 .venv/
 assets/
 filter_columns.py
+
+src/*.ckpt
