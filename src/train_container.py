@@ -124,7 +124,7 @@ def train_run(model, map_path, map_ext, waypoints, starting_wpts, render_on=True
 
                 plt.imshow(image)
                 x, y = 128, 128
-                dx, dy = polar_vec(current_arrow_direction, speed) * 10
+                dx, dy = polar_vec(np.pi / 2 + steer, speed) * 10
                 plt.scatter(x, y)
                 plt.arrow(x, y, dx, dy, head_width=4, head_length=4, fc='black', ec='black')
                 plt.show()
