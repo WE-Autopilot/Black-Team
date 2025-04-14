@@ -15,6 +15,11 @@ import random
 import gymnasium as gym 
 from gymnasium import spaces 
 
+
+
+
+
+
 def ppo_update(model, optimizer, states, actions, old_log_probs, returns, advantages, clip_param = 0.2,
      value_loss_coef = 0.5, entropy_coef = 0.01, epochs = 4, mini_batch_size = 16, device = 'cpu') :
     """Performs the ppo update
@@ -36,7 +41,7 @@ def ppo_update(model, optimizer, states, actions, old_log_probs, returns, advant
     """
 
     # convert to tensors
-    iamges_tensor = pt.FloatTensor(images).to(device) 
+    iamges_tensor = pt.FloatTensor(states).to(device) 
     actions_tensor = pt.LongTensor(actions).to(device) 
     old_log_probs_tensor = pt.FloatTensor(old_log_probs).to(device) 
     returns_tensor = pt.FloatTensor(returns).to(device) 
@@ -55,14 +60,14 @@ def ppo_update(model, optimizer, states, actions, old_log_probs, returns, advant
         
         for start in range(0, batch_size, mini_batch_size) :
             mb_indices = indices[start:start + mini_batch_size]
-            mb_images = iamges_tensor[mb_indices]
+            mb_states = iamges_tensor[mb_indices]
             mb_actions = actions_tensor[mb_indices]
             mb_log_probs_old = old_log_probs_tensor[mb_indices]
             mb_returns = returns_tensor[mb_indices]
             mb_advantages = advantages_tensor[mb_indices]
 
             # Calculate Loss
-            action_logits, value = model(mb_images)
+            action_logits, value = model(mb_states)
             action_dist = Categorical(logits=action_logits)
             log_probs = action_dist.log_prob(mb_actions)
 
@@ -86,12 +91,3 @@ def ppo_update(model, optimizer, states, actions, old_log_probs, returns, advant
             loss.backward()
             optimizer.step()
     
-
-            
-
-            
-
-            
-
-            
-
