@@ -122,7 +122,7 @@ def train_run(model, map_path, map_ext, waypoints, starting_wpts, render_on=True
 
                 polar_vec = lambda angle, mag: np.array([mag * np.cos(angle), mag * np.sin(angle)])
 
-                plt.imshow(image)
+                plt.imshow(image, origin="lower")
                 x, y = 128, 128
                 dx, dy = polar_vec(np.pi / 2 + steer, speed) * 10
                 plt.scatter(x, y)
