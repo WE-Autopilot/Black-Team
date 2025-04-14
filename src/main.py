@@ -48,7 +48,7 @@ def training_mode():
 def normal_mode():
     """Runs the normal driving mode."""
     controller = Controller()
-    run(controller, "../assets/maps/map0.yaml", True)
+    run(controller, "../assets/maps/map0","map0", True)
 
 if __name__ == "__main__":
 
