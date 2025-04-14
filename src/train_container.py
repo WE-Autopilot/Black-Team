@@ -4,6 +4,8 @@ import math
 import numpy as np
 import pyglet  # We assume pyglet is used by the renderer
 
+import matplotlib.pyplot as plt
+from weap_util.lidar import lidar_to_bitmap
 from f110_gym.envs.base_classes import Integrator
 
 # Global variables for the arrow rendering.
@@ -93,8 +95,10 @@ def train_run(model, map_path, map_ext, waypoints, starting_wpts, render_on=True
 
         time_limit = 10.0  # seconds
 
+        snapshot = 0
         # Main simulation loop.
         while not done:
+            snapshot += 1
             # Update the global variable for rendering.
             
             obs, step_reward, done, _ = env.step(np.array([[steer, speed]]))
@@ -110,6 +114,21 @@ def train_run(model, map_path, map_ext, waypoints, starting_wpts, render_on=True
             # Update the arrow steering direction.
             current_theta = obs['poses_theta'][0]
             current_arrow_direction = current_theta + steer
+
+            if snapshot > 100:
+                snapshot = 0
+
+                image = lidar_to_bitmap(scan=obs["scans"][0], channels=1, fov=2 * np.pi, draw_mode="FILL", bg_color="black", draw_center=False)
+
+                polar_vec = lambda angle, mag: np.array([mag * np.cos(angle), mag * np.sin(angle)])
+
+                plt.imshow(image)
+                x, y = 128, 128
+                dx, dy = polar_vec(current_arrow_direction, speed) * 10
+                plt.scatter(x, y)
+                plt.arrow(x, y, dx, dy, head_width=4, head_length=4, fc='black', ec='black')
+                plt.show()
+
 
         # TRIAL FINISHED
         print("crashed" if obs["collisions"] else "done", end="\n\n\n")
