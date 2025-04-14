@@ -1,13 +1,18 @@
 import time
 import gym
+import math
 import numpy as np
+import pyglet  # We assume pyglet is used by the renderer
 
 from f110_gym.envs.base_classes import Integrator
 
+# Global variables for the arrow rendering.
+current_arrow_direction = None
+rendered_arrow = []
+
 def _render_callback(env_renderer):
     """
-    Custom render callback that updates the camera and renders waypoints.
-    Uses the global current_waypoints_global variable for drawing.
+    Custom render callback that updates the camera and draws waypoints and heading.
     """
     e = env_renderer
 
@@ -23,6 +28,33 @@ def _render_callback(env_renderer):
     e.top = top + 400
     e.bottom = bottom - 400
 
+    # Clear the previously drawn arrow.
+    global rendered_arrow
+    for obj in rendered_arrow:
+        obj.delete()
+    rendered_arrow = []
+
+    # Draw the arrow indicating the steering direction.
+    global current_arrow_direction
+    if current_arrow_direction is not None:
+        # Compute the car's center.
+        vertices = np.array(e.cars[0].vertices).reshape(-1, 2)
+        car_center = np.mean(vertices, axis=0)
+
+        # Define arrow length and compute the end point.
+        arrow_length = 100.0
+        end_x = car_center[0] + arrow_length * math.cos(current_arrow_direction)
+        end_y = car_center[1] + arrow_length * math.sin(current_arrow_direction)
+
+        arrow_obj = e.batch.add(
+            2,
+            pyglet.gl.GL_LINES,
+            None,
+            ('v3f/stream', [car_center[0], car_center[1], 0.0, end_x, end_y, 0.0]),
+            ('c3B/stream', [0, 255, 0, 0, 255, 0])
+        )
+        rendered_arrow.append(arrow_obj)
+
 def train_run(model, map_path, map_ext, waypoints, starting_wpts, render_on=True):
     # Create the environment.
     env = gym.make('f110_gym:f110-v0',
@@ -32,6 +64,8 @@ def train_run(model, map_path, map_ext, waypoints, starting_wpts, render_on=True
                    timestep=0.01,
                    integrator=Integrator.RK4)
     
+    global current_arrow_direction
+
     for sx, sy in starting_wpts:
         model.startup()
         # Reset environment and get initial observation.
@@ -73,6 +107,8 @@ def train_run(model, map_path, map_ext, waypoints, starting_wpts, render_on=True
                 break
 
             speed, steer = model.compute(obs)
+            # Update the arrow steering direction.
+            current_arrow_direction = steer
 
         # TRIAL FINISHED
         print("crashed" if obs["collisions"] else "done", end="\n\n\n")
