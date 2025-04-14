@@ -6,6 +6,9 @@ import matplotlib.pyplot as plt
 from weap_util.lidar import lidar_to_bitmap
 
 
+polar_vec = lambda angle, mag: np.array([mag * np.cos(angle), mag * np.sin(angle)])
+
+
 def rotate_path(path, angle):
     cos_theta = np.cos(angle)
     sin_theta = np.sin(angle)
@@ -28,15 +31,14 @@ def show_path(img, paths):
 
 
 class Stage0Dataset(Dataset):
-    def __init__(self, h5_path, path_inds=np.arange(16)):
-        """Dataset class for loading and rotating LiDAR scans.
+    """Dataset class for loading and rotating LiDAR scans.
     
     This dataset loads LiDAR scans from an HDF5 file and creates augmented data
     by rotating each scan through a range of angles. For each scan in the dataset,
     it generates multiple rotated versions based on the min_rotation and max_rotation parameters.
     """
     
-    def __init__(self, h5_path: str, min_index_shift: int = -256, max_index_shift: int = 256, dataset_name: str = "train"):
+    def __init__(self, h5_path: str, min_index_shift: int = -128, max_index_shift: int = 128, dataset_name: str = "train"):
         """Initialize the dataset.
         
         Args:
@@ -72,7 +74,7 @@ class Stage0Dataset(Dataset):
         Returns:
             Total number of items (total_scans * possible_rotations)
         """
-        return self.total_scans * (self.max_index_shift - self.min_index_shift)
+        return int(self.total_scans * (self.max_index_shift - self.min_index_shift))
 
     def __getitem__(self, index: int):
         """Get a rotated LiDAR scan.
@@ -129,12 +131,15 @@ if __name__ == "__main__":
     print(scan.shape)  
     print(angle.shape)
 
-    for i in range(len(dataset) // 512):
-        scan, angle = dataset[i * 512 + 256]
+    for i in range(len(dataset) // 127):
+        scan, angle = dataset[i * 127]
         print(f"{angle / pt.pi * 180:.2f} deg")
         lidar_img = lidar_to_bitmap(scan=scan, channels=1, fov=2 * pt.pi, draw_mode='FILL', bg_color='black', draw_center=False)
         plt.imshow(lidar_img, origin="lower")
         plt.scatter(128, 128)
+        x, y = 128, 128
+        dx, dy = polar_vec(np.pi / 2 + angle, 10)
+        plt.arrow(x, y, dx, dy, head_width=2, head_length=2, fc='black', ec='black')
         plt.show()
 
 

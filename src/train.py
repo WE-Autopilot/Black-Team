@@ -11,7 +11,7 @@ import numpy as np
 
 
 batch_size = 2 ** 10
-epochs = 3
+epochs = 10
 velocity = 1
 
 device = pt.device("cuda" if pt.cuda.is_available() else "cpu")
