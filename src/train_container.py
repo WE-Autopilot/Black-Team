@@ -108,7 +108,8 @@ def train_run(model, map_path, map_ext, waypoints, starting_wpts, render_on=True
 
             speed, steer = model.compute(obs)
             # Update the arrow steering direction.
-            current_arrow_direction = steer
+            current_theta = obs['poses_theta'][0]
+            current_arrow_direction = relative_theta + steer
 
         # TRIAL FINISHED
         print("crashed" if obs["collisions"] else "done", end="\n\n\n")

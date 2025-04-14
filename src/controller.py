@@ -37,15 +37,13 @@ class Controller(AbstractController):
     
         action = dist.sample()
 
-        [[speed, relative_theta]] = action.tolist()
-        current_theta = obs['poses_theta'][0]
-        steer = relative_theta + current_theta
+        [[speed, steer]] = action.tolist()
 
         self.values.append(val.item())
         self.actions.append(action)
         self.log_probs.append(dist.log_prob(action))
         # print(f"Speed: {speed:.2f}")
-        return 1, relative_theta
+        return 1, steer
 
     def shutdown(self):
         pass
