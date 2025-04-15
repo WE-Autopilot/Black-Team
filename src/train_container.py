@@ -68,7 +68,7 @@ def train_run(model, map_path, map_ext, waypoints, starting_wpts, render_on=True
     
     global current_arrow_direction
 
-    for sx, sy in starting_wpts:
+    for i, (sx, sy) in enumerate(starting_wpts):
         model.startup()
         # Reset environment and get initial observation.
         # obs, step_reward, done, info = env.reset(np.array([[0, 0, 0]]))
@@ -135,12 +135,12 @@ def train_run(model, map_path, map_ext, waypoints, starting_wpts, render_on=True
         print('Sim elapsed time:', laptime, 'Real elapsed time:', time.time() - start)
 
         current_pos = np.array([obs['poses_x'][0], obs['poses_y'][0]])
-        start_pos = np.array([sx, sy])
-        progress_val = get_progress(waypoints, current_pos, start_pos)
+        starting_index = i * 32
+        progress_val = get_progress(waypoints, current_pos, starting_index)
         model.train_update(progress_val, obs["collisions"])
 
 
-def get_progress(waypoints, pos, start_pos):
+def get_progress(waypoints, pos, start_index):
     """
     Computes the number of waypoints passed since the starting position.
 
@@ -153,7 +153,6 @@ def get_progress(waypoints, pos, start_pos):
         int: The number of waypoints passed, i.e., the difference between the closest waypoint index 
              to the current position and the index of the waypoint closest to the starting position.
     """
-    start_index = np.argmin(np.linalg.norm(waypoints - start_pos, axis=1))
     current_index = np.argmin(np.linalg.norm(waypoints - pos, axis=1))
     progress_val = current_index - start_index
     return progress_val
