@@ -40,7 +40,7 @@ import argparse
 parser = argparse.ArgumentParser()
 parser.add_argument('--seed', type=int, default=123, help='Seed for the numpy rng.')
 parser.add_argument('--num_maps', type=int, default=1, help='Number of maps to generate.')
-parser.add_argument('--path', type=int, default="./", help='Path to generate to.')
+parser.add_argument('--path', type=str, default="./", help='Path to generate to.')
 args = parser.parse_args()
 
 np.random.seed(args.seed)
@@ -221,10 +221,10 @@ def convert_track(track, track_int, track_ext, iter):
     plt.close()
 
     path_vecs = xy_pixels - np.roll(xy_pixels, 1, axis=0)
-    raw_angles = np.arctan2(path_vecs)
+    raw_angles = np.arctan2(path_vecs[:, 1], path_vecs[:, 0])
     angles = (raw_angles + np.roll(raw_angles, 1)) / 2
     # saving track centerline as a csv in ros coords
-    waypoints_csv = open(path + 'maps/map' + str(iter) + '.csv', 'w')
+    waypoints_csv = open(args.path + 'maps/map' + str(iter) + '.csv', 'w')
     for row, angle in zip(xy_pixels, angles):
         waypoints_csv.write(str(0.05*row[0]) + ', ' + str(0.05*row[1]) + ', ' + f"{angle:.8f}" + '\n')
     waypoints_csv.close()
