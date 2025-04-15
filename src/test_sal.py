@@ -33,7 +33,6 @@ ims = []
 pbar = tqdm(range(4096), desc="test...", unit="sample")
 for i in pbar:
     i *= interval
-    i = i // 256 * 2560 + i % 256
     scan, target = dataset[i]
     scan = scan.unsqueeze(0).to(device)
     target = target.to(device)
@@ -54,4 +53,4 @@ for i in pbar:
     ims.append([img, point, arrow, target_arrow])
 
 ani = animation.ArtistAnimation(fig, ims, interval=200, blit=True, repeat_delay=1000)
-ani.save('test.mp4', writer='ffmpeg', fps=60)
+ani.save('test.mp4', writer='ffmpeg', fps=30)
