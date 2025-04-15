@@ -25,10 +25,10 @@ def _render_callback(env_renderer):
     e.score_label.x = left
     e.score_label.y = top - 300
 
-    e.left = left - 400
-    e.right = right + 400
-    e.top = top + 400
-    e.bottom = bottom - 400
+    e.left = left - 1000
+    e.right = right + 1000
+    e.top = top + 1000
+    e.bottom = bottom - 1000
 
     # Clear the previously drawn arrow.
     global rendered_arrow
@@ -57,22 +57,15 @@ def _render_callback(env_renderer):
         )
         rendered_arrow.append(arrow_obj)
 
-def train_run(model, map_path, map_ext, waypoints, starting_wpts, render_on=True):
-    # Create the environment.
-    env = gym.make('f110_gym:f110-v0',
-                   map=map_path,
-                   map_ext=map_ext,
-                   num_agents=1,
-                   timestep=0.01,
-                   integrator=Integrator.RK4)
-    
+def train_run(model, env, map_path, map_ext, waypoints, starting_wpts, render_on=True):
+    print("Loading map image from:", map_path + map_ext)
     global current_arrow_direction
 
-    for i, (sx, sy) in enumerate(starting_wpts):
+    for i, (sx, sy, stheta) in enumerate(starting_wpts):
         model.startup()
         # Reset environment and get initial observation.
         # obs, step_reward, done, info = env.reset(np.array([[0, 0, 0]]))
-        obs, step_reward, done, _ = env.reset(np.array([[sx, sy, 0]]))
+        obs, step_reward, done, _ = env.reset(np.array([[sx, sy, stheta]]))
         # Retrieve lap count for the ego agent.
         # The environment's lap_counts is assumed to be a list or array (one entry per agent).
         lap_count = env.lap_counts[env.ego_idx] if hasattr(env, "lap_counts") else 0
@@ -139,7 +132,6 @@ def train_run(model, map_path, map_ext, waypoints, starting_wpts, render_on=True
         progress_val = get_progress(waypoints, current_pos, starting_index)
         model.train_update(progress_val, obs["collisions"])
 
-
 def get_progress(waypoints, pos, start_index):
     """
     Computes the number of waypoints passed since the starting position.
@@ -153,6 +145,7 @@ def get_progress(waypoints, pos, start_index):
         int: The number of waypoints passed, i.e., the difference between the closest waypoint index 
              to the current position and the index of the waypoint closest to the starting position.
     """
-    current_index = np.argmin(np.linalg.norm(waypoints - pos, axis=1))
+    xy_waypoints = waypoints[:, :2]
+    current_index = np.argmin(np.linalg.norm(xy_waypoints - pos, axis=1))
     progress_val = current_index - start_index
     return progress_val
