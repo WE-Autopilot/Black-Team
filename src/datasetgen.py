@@ -59,7 +59,7 @@ with hp.File(dataset_path, "w") as file:
 
         scan_sim.set_map(map_path, map_ext)
         csv_path = map_path.replace(".yaml", ".csv")
-        waypoints = np.loadtxt(csv_path, delimiter=",")
+        waypoints = np.loadtxt(csv_path, delimiter=",")[:, :2]
         waypoints = np.concatenate((waypoints, waypoints[-2:0:-1]), axis=0)
 
         num_waypoints = len(waypoints)
