@@ -122,24 +122,38 @@ def train_run(model, map_path, map_ext, waypoints, starting_wpts, render_on=True
 
                 polar_vec = lambda angle, mag: np.array([mag * np.cos(angle), mag * np.sin(angle)])
 
-                plt.imshow(image, origin="lower")
-                x, y = 128, 128
-                dx, dy = polar_vec(np.pi / 2 + steer, speed) * 10
-                plt.scatter(x, y)
-                plt.arrow(x, y, dx, dy, head_width=4, head_length=4, fc='black', ec='black')
-                plt.show()
+                # plt.imshow(image, origin="lower")
+                # x, y = 128, 128
+                # dx, dy = polar_vec(np.pi / 2 + steer, speed) * 10
+                # plt.scatter(x, y)
+                # plt.arrow(x, y, dx, dy, head_width=4, head_length=4, fc='black', ec='black')
+                # plt.show()
 
 
         # TRIAL FINISHED
         print("crashed" if obs["collisions"] else "done", end="\n\n\n")
         print('Sim elapsed time:', laptime, 'Real elapsed time:', time.time() - start)
 
+        current_pos = np.array([obs['poses_x'][0], obs['poses_y'][0]])
+        start_pos = np.array([sx, sy])
+        progress_val = get_progress(waypoints, current_pos, start_pos)
+        model.train_update(progress_val, obs["collisions"])
 
-    def get_progress(waypoints, starting_wpts):
-        """
-        Returns the progress of the car from the start position.
-        """
-        progress = lambda wps, pos, start : np.argmin(np.linalg.norm(wps - pos, axis=1)) - start
 
-        return progress
+def get_progress(waypoints, pos, start_pos):
+    """
+    Computes the number of waypoints passed since the starting position.
+
+    Args:
+        waypoints (np.array): Array of waypoints, where each row is [x, y].
+        pos (np.array): Current position [x, y] of the car.
+        start_pos (np.array): Starting position [x, y] of the car.
     
+    Returns:
+        int: The number of waypoints passed, i.e., the difference between the closest waypoint index 
+             to the current position and the index of the waypoint closest to the starting position.
+    """
+    start_index = np.argmin(np.linalg.norm(waypoints - start_pos, axis=1))
+    current_index = np.argmin(np.linalg.norm(waypoints - pos, axis=1))
+    progress_val = current_index - start_index
+    return progress_val

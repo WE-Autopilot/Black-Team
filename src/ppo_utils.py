@@ -6,7 +6,7 @@ import torch as pt
 import torch.nn as nn
 import torch.optim as optim 
 from torch.utils.data import TensorDataset, DataLoader 
-from torch.distributions import Categorical
+from torch.distributions import Normal
 from tqdm import tqdm 
 import numpy as np 
 import matplotlib.pyplot as plt 
@@ -41,11 +41,11 @@ def ppo_update(model, optimizer, states, actions, old_log_probs, returns, advant
     """
 
     # convert to tensors
-    iamges_tensor = pt.FloatTensor(states).to(device) 
-    actions_tensor = pt.LongTensor(actions).to(device) 
-    old_log_probs_tensor = pt.FloatTensor(old_log_probs).to(device) 
-    returns_tensor = pt.FloatTensor(returns).to(device) 
-    advantages_tensor = pt.FloatTensor(advantages).to(device) 
+    states_tensor = pt.FloatTensor(states).to(device) 
+    actions_tensor = pt.FloatTensor(actions).to(device) 
+    old_log_probs_tensor = pt.FloatTensor(old_log_probs).to(device).detach() 
+    returns_tensor = pt.FloatTensor(returns).to(device).detach() 
+    advantages_tensor = pt.FloatTensor(advantages).to(device).detach() 
     
     # Normalize advantages
     adv_mean = advantages_tensor.mean()
@@ -53,23 +53,23 @@ def ppo_update(model, optimizer, states, actions, old_log_probs, returns, advant
     advantages_tensor = (advantages_tensor - adv_mean) / (adv_std + 1e-8)
 
     
-    batch_size = iamges_tensor.shape[0]
+    batch_size = states_tensor.shape[0]
     for _ in range(epochs) :
         indices = np.arange(batch_size)
         np.random.shuffle(indices)
         
         for start in range(0, batch_size, mini_batch_size) :
             mb_indices = indices[start:start + mini_batch_size]
-            mb_states = iamges_tensor[mb_indices]
+            mb_states = states_tensor[mb_indices].clone()
             mb_actions = actions_tensor[mb_indices]
             mb_log_probs_old = old_log_probs_tensor[mb_indices]
             mb_returns = returns_tensor[mb_indices]
             mb_advantages = advantages_tensor[mb_indices]
 
             # Calculate Loss
-            action_logits, value = model(mb_states)
-            action_dist = Categorical(logits=action_logits)
-            log_probs = action_dist.log_prob(mb_actions)
+            new_dist, value = model(mb_states)
+            # action_dist = Categorical(logits=action_logits)
+            log_probs = new_dist.log_prob(mb_actions).sum(dim=-1)
 
             # Calculate the policy ratio (pi_new / pi_old)
             ratio = pt.exp(log_probs - mb_log_probs_old)
@@ -81,7 +81,7 @@ def ppo_update(model, optimizer, states, actions, old_log_probs, returns, advant
 
             # calculate loss (MSE) 
             value_loss = pt.nn.functional.mse_loss(value.squeeze(), mb_returns.squeeze())
-            entropy = action_dist.entropy().mean()
+            entropy = new_dist.entropy().sum(dim=-1).mean()
             
             # Calculate the total loss
             loss = policy_loss + value_loss_coef * value_loss - entropy_coef * entropy
