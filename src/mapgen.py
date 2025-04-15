@@ -220,10 +220,13 @@ def convert_track(track, track_int, track_ext, iter):
     yaml.close()
     plt.close()
 
+    path_vecs = xy_pixels - np.roll(xy_pixels, 1, axis=0)
+    raw_angles = np.arctan2(path_vecs)
+    angles = (raw_angles + np.roll(raw_angles, 1)) / 2
     # saving track centerline as a csv in ros coords
-    waypoints_csv = open(args.path + 'maps/map' + str(iter) + '.csv', 'w')
-    for row in xy_pixels:
-        waypoints_csv.write(str(0.05*row[0]) + ', ' + str(0.05*row[1]) + '\n')
+    waypoints_csv = open(path + 'maps/map' + str(iter) + '.csv', 'w')
+    for row, angle in zip(xy_pixels, angles):
+        waypoints_csv.write(str(0.05*row[0]) + ', ' + str(0.05*row[1]) + ', ' + f"{angle:.8f}" + '\n')
     waypoints_csv.close()
 
 
