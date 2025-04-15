@@ -18,7 +18,6 @@ device = pt.device("cuda" if pt.cuda.is_available() else "cpu")
 
 sal = SAL(1080).to(device)
 try:
-    1/0
     state_dict = pt.load("backup.ckpt", map_location=device)
     sal.load_state_dict(state_dict)
     print(f"Loading backup model on {device}")
@@ -26,12 +25,7 @@ except:
     print(f"Loading blank model on {device}")
 optimizer = AdamW(sal.parameters(), lr=1e-4)
 dataset = Stage0Dataset("dataset.h5")
-full_dataset_size = len(dataset)
-subset_size = int(0.1 * full_dataset_size)
-indices = pt.randperm(full_dataset_size).tolist()
-subset_indices = indices[:subset_size]
-subset = Subset(dataset, subset_indices)
-dataloader = DataLoader(subset, batch_size=batch_size, shuffle=True)
+dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
 
 losses = []
 pbar = tqdm(range(epochs), desc="training...", unit="epoch")
