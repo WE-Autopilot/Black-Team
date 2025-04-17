@@ -12,8 +12,6 @@ import numpy as np
 import matplotlib.pyplot as plt 
 import os 
 import random 
-import gymnasium as gym 
-from gymnasium import spaces 
 
 
 
@@ -40,31 +38,29 @@ def ppo_update(model, optimizer, states, actions, old_log_probs, returns, advant
         device (str, optional): CPU or GPU device. Defaults to 'cpu'.
     """
 
-    # convert to tensors
-    states_tensor = pt.FloatTensor(states).to(device) 
-    actions_tensor = pt.FloatTensor(actions).to(device) 
-    old_log_probs_tensor = pt.FloatTensor(old_log_probs).to(device).detach() 
-    returns_tensor = pt.FloatTensor(returns).to(device).detach() 
-    advantages_tensor = pt.FloatTensor(advantages).to(device).detach() 
+    # detach
+    old_log_probs = old_log_probs.detach() 
+    returns = returns.detach() 
+    advantages = advantages.detach() 
     
     # Normalize advantages
-    adv_mean = advantages_tensor.mean()
-    adv_std = advantages_tensor.std(unbiased=False) if advantages_tensor.numel() > 1 else pt.tensor(1.0, device=advantages_tensor.device)
-    advantages_tensor = (advantages_tensor - adv_mean) / (adv_std + 1e-8)
+    adv_mean = advantages.mean()
+    adv_std = advantages.std(unbiased=False) if advantages.numel() > 1 else pt.tensor(1.0, device=advantages.device)
+    advantages = (advantages - adv_mean) / (adv_std + 1e-8)
 
     
-    batch_size = states_tensor.shape[0]
+    batch_size = states.shape[0]
     for _ in range(epochs) :
         indices = np.arange(batch_size)
         np.random.shuffle(indices)
         
         for start in range(0, batch_size, mini_batch_size) :
             mb_indices = indices[start:start + mini_batch_size]
-            mb_states = states_tensor[mb_indices].clone()
-            mb_actions = actions_tensor[mb_indices]
-            mb_log_probs_old = old_log_probs_tensor[mb_indices]
-            mb_returns = returns_tensor[mb_indices]
-            mb_advantages = advantages_tensor[mb_indices]
+            mb_states = states[mb_indices].clone()
+            mb_actions = actions[mb_indices]
+            mb_log_probs_old = old_log_probs[mb_indices]
+            mb_returns = returns[mb_indices]
+            mb_advantages = advantages[mb_indices]
 
             # Calculate Loss
             new_dist, value = model(mb_states)
