@@ -2,7 +2,7 @@ import torch as pt
 from torch.optim import AdamW
 from sal import SAL
 from dataset import Stage0Dataset
-from torch.utils.data import DataLoader, random_split
+from torch.utils.data import DataLoader, random_split, Subset
 from tqdm import tqdm
 import matplotlib.pyplot as plt
 import os
@@ -11,20 +11,19 @@ import numpy as np
 
 
 batch_size = 2 ** 10
-epochs = 3
+epochs = 1000
 velocity = 1
 
 device = pt.device("cuda" if pt.cuda.is_available() else "cpu")
 
 sal = SAL(1080).to(device)
 try:
-    1/0
     state_dict = pt.load("backup.ckpt", map_location=device)
     sal.load_state_dict(state_dict)
     print(f"Loading backup model on {device}")
 except:
     print(f"Loading blank model on {device}")
-optimizer = AdamW(sal.parameters(), lr=1e-4)
+optimizer = AdamW(sal.parameters(), lr=1e-6)
 dataset = Stage0Dataset("dataset.h5")
 dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
 
