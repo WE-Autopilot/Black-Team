@@ -7,7 +7,7 @@ import pyglet  # We assume pyglet is used by the renderer
 import matplotlib.pyplot as plt
 from weap_util.lidar import lidar_to_bitmap
 from f110_gym.envs.base_classes import Integrator
-from reward_utils import get_progress
+# from reward_utils import get_progress
 
 # Global variables for the arrow rendering.
 current_arrow_direction = None
@@ -88,7 +88,7 @@ def train_run(model, env, map_path, map_ext, waypoints, starting_wpts, render_on
 
         start = time.time()
 
-        time_limit = 10.0  # seconds
+        time_limit = 100.0  # seconds
 
         snapshot = 0
         # Main simulation loop.
@@ -135,20 +135,20 @@ def train_run(model, env, map_path, map_ext, waypoints, starting_wpts, render_on
         model.train_update(progress_val, obs["collisions"])
 
 #! Deprecated
-# def get_progress(waypoints, pos, start_index):
-#     """
-#     Computes the number of waypoints passed since the starting position.
+def get_progress(waypoints, pos, start_index):
+    """
+    Computes the number of waypoints passed since the starting position.
 
-#     Args:
-#         waypoints (np.array): Array of waypoints, where each row is [x, y].
-#         pos (np.array): Current position [x, y] of the car.
-#         start_pos (np.array): Starting position [x, y] of the car.
+    Args:
+        waypoints (np.array): Array of waypoints, where each row is [x, y].
+        pos (np.array): Current position [x, y] of the car.
+        start_pos (np.array): Starting position [x, y] of the car.
     
-#     Returns:
-#         int: The number of waypoints passed, i.e., the difference between the closest waypoint index 
-#              to the current position and the index of the waypoint closest to the starting position.
-#     """
-#     xy_waypoints = waypoints[:, :2]
-#     current_index = np.argmin(np.linalg.norm(xy_waypoints - pos, axis=1))
-#     progress_val = current_index - start_index
-#     return progress_val
+    Returns:
+        int: The number of waypoints passed, i.e., the difference between the closest waypoint index 
+             to the current position and the index of the waypoint closest to the starting position.
+    """
+    xy_waypoints = waypoints[:, :2]
+    current_index = np.argmin(np.linalg.norm(xy_waypoints - pos, axis=1))
+    progress_val = current_index - start_index
+    return progress_val

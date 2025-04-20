@@ -49,7 +49,7 @@ class Controller(AbstractController):
         print(f"Mean: {dist.mean[0, 0]}\n")
         print(f"Standard Deviation: {dist.stddev[0, 0]}")
 
-        return 1.5, steer 
+        return 8, steer 
 
     def shutdown(self):
         pass
