@@ -11,7 +11,7 @@ import numpy as np
 
 
 batch_size = 2 ** 10
-epochs = 10
+epochs = 1000
 velocity = 1
 
 device = pt.device("cuda" if pt.cuda.is_available() else "cpu")
@@ -23,7 +23,7 @@ try:
     print(f"Loading backup model on {device}")
 except:
     print(f"Loading blank model on {device}")
-optimizer = AdamW(sal.parameters(), lr=1e-4)
+optimizer = AdamW(sal.parameters(), lr=1e-6)
 dataset = Stage0Dataset("dataset.h5")
 dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
 

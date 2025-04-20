@@ -37,20 +37,27 @@ for i in pbar:
     scan = scan.unsqueeze(0).to(device)
     target = target.to(device)
 
-    dist, value = sal(scan)
-    [[steer, speed]] = dist.mean.detach()
-    
     image = lidar_to_bitmap(scan=scan[0], channels=1, fov=2 * np.pi, draw_mode="FILL", bg_color="black", draw_center=False)
 
     img = ax.imshow(image, origin="lower", animated=True)
+
     x, y = 128, 128
-    dx, dy = polar_vec(np.pi / 2 + steer, speed) * 10
-    dx1, dy1 = polar_vec(np.pi / 2 + target, 100)
     point = ax.scatter(x, y, animated=True)
-    arrow = ax.arrow(x, y, dx, dy, head_width=4, head_length=4, fc='black', ec='black', animated=True)
+
+    dx1, dy1 = polar_vec(np.pi / 2 + target, 100)
     target_arrow = ax.arrow(x, y, dx1, dy1, head_width=5, head_length=5, fc='red', ec='red', animated=True)
 
-    ims.append([img, point, arrow, target_arrow])
+    elements = [img, point, target_arrow]
+    for j in range(100):
+        dist, value = sal(scan)
+        [[steer, speed]] = dist.mean.detach()
+        
+        dx, dy = polar_vec(np.pi / 2 + steer, speed) * 10
+        arrow = ax.arrow(x, y, dx, dy, head_width=4, head_length=4, fc='black', ec='black', animated=True)
+        elements.append(arrow)
+
+
+    ims.append(elements)
 
 ani = animation.ArtistAnimation(fig, ims, interval=200, blit=True, repeat_delay=1000)
 ani.save('test.mp4', writer='ffmpeg', fps=30)
