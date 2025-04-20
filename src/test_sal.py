@@ -1,37 +1,63 @@
 import torch as pt
 from torch.optim import AdamW
 from sal import SAL
-from dataset import Stage0Dataset, show_path
+from dataset import Stage0Dataset
 from torch.utils.data import DataLoader, random_split
 from tqdm import tqdm
+import matplotlib.animation as animation
 import matplotlib.pyplot as plt
 import os
 import h5py as hp
 import numpy as np
+from weap_util.lidar import lidar_to_bitmap
 
 
-batch_size = 64
-epochs = 10
+polar_vec = lambda angle, mag: np.array([mag * np.cos(angle), mag * np.sin(angle)])
+
+
+interval = 4
 
 #device = pt.device("cuda" if pt.cuda.is_available() else "cpu")
 device = pt.device("cpu")
 
 print("Loading model...")
-sal = SAL(num_points=16).to(device)
+sal = SAL().to(device)
 state_dict = pt.load("model.ckpt", map_location=device)
 sal.load_state_dict(state_dict)
 sal.eval()
 print("Loading dataset...")
-dataset = Stage0Dataset("dataset.h5", np.arange(16))
+dataset = Stage0Dataset("dataset.h5")
 
-pbar = tqdm(range(len(dataset)), desc="test...", unit="sample")
+fig, ax = plt.subplots()
+ims = []
+pbar = tqdm(range(4096), desc="test...", unit="sample")
 for i in pbar:
-    image, target = dataset[i]
-    image = image.unsqueeze(0).to(device)
+    i *= interval
+    scan, target = dataset[i]
+    scan = scan.unsqueeze(0).to(device)
     target = target.to(device)
-    pos = pt.zeros(1, 2).to(device)
 
-    dist, value = sal(image, pos)
-    paths = [dist.sample() for _ in range(100)]
+    image = lidar_to_bitmap(scan=scan[0], channels=1, fov=2 * np.pi, draw_mode="FILL", bg_color="black", draw_center=False)
 
-    show_path(image[0], paths)
+    img = ax.imshow(image, origin="lower", animated=True)
+
+    x, y = 128, 128
+    point = ax.scatter(x, y, animated=True)
+
+    dx1, dy1 = polar_vec(np.pi / 2 + target, 100)
+    target_arrow = ax.arrow(x, y, dx1, dy1, head_width=5, head_length=5, fc='red', ec='red', animated=True)
+
+    elements = [img, point, target_arrow]
+    for j in range(100):
+        dist, value = sal(scan)
+        [[steer, speed]] = dist.mean.detach()
+        
+        dx, dy = polar_vec(np.pi / 2 + steer, speed) * 10
+        arrow = ax.arrow(x, y, dx, dy, head_width=4, head_length=4, fc='black', ec='black', animated=True)
+        elements.append(arrow)
+
+
+    ims.append(elements)
+
+ani = animation.ArtistAnimation(fig, ims, interval=200, blit=True, repeat_delay=1000)
+ani.save('test.mp4', writer='ffmpeg', fps=30)

@@ -7,6 +7,7 @@ import pyglet  # We assume pyglet is used by the renderer
 import matplotlib.pyplot as plt
 from weap_util.lidar import lidar_to_bitmap
 from f110_gym.envs.base_classes import Integrator
+# from reward_utils import get_progress
 
 # Global variables for the arrow rendering.
 current_arrow_direction = None
@@ -62,6 +63,7 @@ def train_run(model, env, map_path, map_ext, waypoints, starting_wpts, render_on
     global current_arrow_direction
 
     for i, (sx, sy, stheta) in enumerate(starting_wpts):
+        print(f"\nStarting training on track: {map_path + map_ext} with starting position: ({sx}, {sy}, {stheta})")
         model.startup()
         # Reset environment and get initial observation.
         # obs, step_reward, done, info = env.reset(np.array([[0, 0, 0]]))
@@ -86,7 +88,7 @@ def train_run(model, env, map_path, map_ext, waypoints, starting_wpts, render_on
 
         start = time.time()
 
-        time_limit = 10.0  # seconds
+        time_limit = 100.0  # seconds
 
         snapshot = 0
         # Main simulation loop.
@@ -132,6 +134,7 @@ def train_run(model, env, map_path, map_ext, waypoints, starting_wpts, render_on
         progress_val = get_progress(waypoints, current_pos, starting_index)
         model.train_update(progress_val, obs["collisions"])
 
+#! Deprecated
 def get_progress(waypoints, pos, start_index):
     """
     Computes the number of waypoints passed since the starting position.

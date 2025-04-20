@@ -57,7 +57,6 @@ def training_mode():
             """
             
             obs, _, _, _ = env.reset(np.array([[0, 0, 0]]))
-            print(env.obs)
             env.render(mode='human')
             env.update_map(yaml_path, ".png")
             F110Env.renderer.update_obs(obs)

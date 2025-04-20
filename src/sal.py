@@ -5,14 +5,21 @@ from torch.distributions import Normal
 
 
 class SAL(nn.Module):
-    def __init__(self, num_beams=1080, min_std=1e-4, max_std=2):
+    def __init__(self, num_beams=1080, min_std=1e-2, max_std=2, device="cpu"):
         super().__init__()
         self.min_std = min_std
         self.max_std = max_std
+        self.device = device
 
         # Fully connected layers using Sequential
         self.fc_layers = nn.Sequential(
             nn.Linear(num_beams, 1024),
+            nn.ReLU(),
+            nn.Linear(1024, 1024),
+            nn.ReLU(),
+            nn.Linear(1024, 1024),
+            nn.ReLU(),
+            nn.Linear(1024, 1024),
             nn.ReLU(),
             nn.Linear(1024, 1024),
             nn.ReLU(),
@@ -25,10 +32,13 @@ class SAL(nn.Module):
             nn.Linear(128, 5),
         )
 
+        self.to(device)
+
     def forward(self, x):
         x = self.fc_layers(x)
         mean = x[:, :2]
-        std = F.sigmoid(x[:, 2:-1]) * self.max_std + self.min_std
+        std = F.sigmoid(x[:, 2:-1]) * self.max_std
+        std = pt.clamp(std, min=self.min_std)
         dist = Normal(mean, std)
         return dist, x[:, -1]
 
