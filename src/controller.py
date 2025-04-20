@@ -39,14 +39,17 @@ class Controller(AbstractController):
     
         action = dist.sample()
 
-        [[speed, steer]] = action.tolist()
+        [[steer, speed]] = action.tolist()
 
         self.values.append(val.item())
         self.actions.append(action)
         self.log_probs.append(dist.log_prob(action))
         # print(f"Speed: {speed:.2f}")
+        print(f"Steer: {steer:.2f}")
+        print(f"Mean: {dist.mean[0, 0]}\n")
+        print(f"Standard Deviation: {dist.stddev[0, 0]}")
 
-        return 1, steer
+        return 1.5, steer 
 
     def shutdown(self):
         pass

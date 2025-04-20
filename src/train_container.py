@@ -7,6 +7,7 @@ import pyglet  # We assume pyglet is used by the renderer
 import matplotlib.pyplot as plt
 from weap_util.lidar import lidar_to_bitmap
 from f110_gym.envs.base_classes import Integrator
+from reward_utils import get_progress
 
 # Global variables for the arrow rendering.
 current_arrow_direction = None
@@ -62,6 +63,7 @@ def train_run(model, env, map_path, map_ext, waypoints, starting_wpts, render_on
     global current_arrow_direction
 
     for i, (sx, sy, stheta) in enumerate(starting_wpts):
+        print(f"\nStarting training on track: {map_path + map_ext} with starting position: ({sx}, {sy}, {stheta})")
         model.startup()
         # Reset environment and get initial observation.
         # obs, step_reward, done, info = env.reset(np.array([[0, 0, 0]]))
@@ -132,20 +134,21 @@ def train_run(model, env, map_path, map_ext, waypoints, starting_wpts, render_on
         progress_val = get_progress(waypoints, current_pos, starting_index)
         model.train_update(progress_val, obs["collisions"])
 
-def get_progress(waypoints, pos, start_index):
-    """
-    Computes the number of waypoints passed since the starting position.
+#! Deprecated
+# def get_progress(waypoints, pos, start_index):
+#     """
+#     Computes the number of waypoints passed since the starting position.
 
-    Args:
-        waypoints (np.array): Array of waypoints, where each row is [x, y].
-        pos (np.array): Current position [x, y] of the car.
-        start_pos (np.array): Starting position [x, y] of the car.
+#     Args:
+#         waypoints (np.array): Array of waypoints, where each row is [x, y].
+#         pos (np.array): Current position [x, y] of the car.
+#         start_pos (np.array): Starting position [x, y] of the car.
     
-    Returns:
-        int: The number of waypoints passed, i.e., the difference between the closest waypoint index 
-             to the current position and the index of the waypoint closest to the starting position.
-    """
-    xy_waypoints = waypoints[:, :2]
-    current_index = np.argmin(np.linalg.norm(xy_waypoints - pos, axis=1))
-    progress_val = current_index - start_index
-    return progress_val
+#     Returns:
+#         int: The number of waypoints passed, i.e., the difference between the closest waypoint index 
+#              to the current position and the index of the waypoint closest to the starting position.
+#     """
+#     xy_waypoints = waypoints[:, :2]
+#     current_index = np.argmin(np.linalg.norm(xy_waypoints - pos, axis=1))
+#     progress_val = current_index - start_index
+#     return progress_val
