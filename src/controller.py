@@ -1,8 +1,10 @@
+import numpy as np
 from weap_util.abstract_controller import AbstractController
 from sal import SAL
 import torch as pt
 import torch.optim as optim
 from ppo_utils import ppo_update
+from reward_utils import get_progress
 
 def addNoise(obs):
     """
@@ -19,12 +21,18 @@ class Controller(AbstractController):
         self.sal = SAL()
         self.sal.load(path)
 
-    def startup(self):
+    def startup(self, wpts):
 
         self.values = []
         self.scans = []
         self.actions = []
         self.log_probs = []
+        self.progress = []
+        self.last_pos = None
+
+        self.waypoints = wpts[:, :2]
+
+        print(self.sal.fc_layers[0].bias)
 
         pass
 
@@ -33,6 +41,12 @@ class Controller(AbstractController):
         Computes control commands and returns the current set of global waypoints.
         It checks if the vehicle is near the last few waypoints and loads the next batch if needed.
         """
+        current_pos = np.array([obs['poses_x'][0], obs['poses_y'][0]])
+        if self.last_pos is not None:
+            self.progress.append(get_progress(self.waypoints, self.last_pos, current_pos))
+        
+        self.last_pos = current_pos
+
         scans = pt.tensor(obs["scans"][0], dtype=pt.float)[None, ...]
         dist, val = self.sal(scans)
         self.scans.append(scans)
@@ -44,17 +58,19 @@ class Controller(AbstractController):
         self.values.append(val.item())
         self.actions.append(action)
         self.log_probs.append(dist.log_prob(action))
-        # print(f"Speed: {speed:.2f}")
-        print(f"Steer: {steer:.2f}")
-        print(f"Mean: {dist.mean[0, 0]}\n")
-        print(f"Standard Deviation: {dist.stddev[0, 0]}")
 
-        return 8, steer 
+        # LOGGING
+        # print(f"Speed: {speed:.2f}")
+        # print(f"Steer: {steer:.2f}")
+        # print(f"Mean: {dist.mean[0, 0]}\n")
+        # print(f"Standard Deviation: {dist.stddev[0, 0]}")
+
+        return speed, steer 
 
     def shutdown(self):
         pass
 
-    def train_update(self, progress, crashed):
+    def train_update(self, obs):
         """
         3 Things TODO
 
@@ -67,24 +83,27 @@ class Controller(AbstractController):
         NOTE: Make sure we don't change the dimensions at all, the lists should be its own dimension within the tensor.
         """
         
+        crashed = obs["collisions"]
+
+        current_pos = np.array([obs['poses_x'][0], obs['poses_y'][0]])
+        self.progress.append(get_progress(self.waypoints, self.last_pos, current_pos))
+
         # Convert lists to tensors using pt.cat
         scans_tensor = pt.cat(self.scans, dim=0)          # [T, ...] observations
         actions_tensor = pt.cat(self.actions, dim=0)        # [T, ...] actions taken
         log_probs_tensor = pt.cat(self.log_probs, dim=0).sum(dim=-1)    # [T, ...] logged probabilities
-
+        progress_tensor = pt.tensor(self.progress, dtype=pt.float32)  # [T] progress made
         # Unsqueeze to maintain the extra dimension per timestep.
-        values_tensor = pt.tensor(self.values, dtype=pt.float32).unsqueeze(1)  # shape: [T, 1]
+        values_tensor = pt.tensor(self.values, dtype=pt.float32)  # shape: [T, 1]
 
         # Calculate the reward:
-        reward_value = progress - 10 if crashed else progress
-        reward_tensor = pt.full_like(values_tensor, fill_value=reward_value)  # shape: [T, 1]
-
+        reward_tensor = progress_tensor - pt.exp(-pt.arange(len(progress_tensor)-1,-1,-1)/10)*10*crashed
+        reward_tensor = reward_tensor.to(pt.float32)
         # Calculate the advantage: reward - predicted value.
         advantage_tensor = reward_tensor - values_tensor
 
-        # @Ian do we need to do this?
         if not hasattr(self, "optimizer"):
-            self.optimizer = optim.Adam(self.sal.parameters(), lr=1e-4)
+            self.optimizer = optim.Adam(self.sal.parameters(), lr=1e-8)
 
         device = scans_tensor.device  # Use the same device as the scans tensor.
         ppo_update(self.sal, self.optimizer,

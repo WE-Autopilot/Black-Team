@@ -67,7 +67,7 @@ def training_mode():
             F110Env.renderer.batch = pyglet.graphics.Batch()
             F110Env.renderer.update_map(maps_folder+"/"+track_name, ".png")
             waypoints = np.loadtxt(csv_path, delimiter=",")
-            starting_wpts = waypoints[::32]
+            starting_wpts = waypoints[::64]
             print(maps_folder+"/"+track_name)
 
             train_run(controller, env, maps_folder+"/"+track_name, ".png", waypoints, starting_wpts, True)
