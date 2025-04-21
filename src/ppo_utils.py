@@ -2,7 +2,7 @@ import torch as pt
 import numpy as np 
 
 def ppo_update(model, optimizer, states, actions, old_log_probs, returns, advantages, clip_param = 0.2,
-     value_loss_coef = 0.5, entropy_coef = 0.01, epochs = 4, mini_batch_size = 16, device = 'cpu') :
+     policy_coef = 0.5, value_loss_coef = 0.5, entropy_coef = 0.01, epochs = 4, mini_batch_size = 16, device = 'cpu') :
     """Performs the ppo update
 
     Args:
@@ -14,7 +14,8 @@ def ppo_update(model, optimizer, states, actions, old_log_probs, returns, advant
         returns (np.array): Batch of calculated returns 
         advantages (np.array): Batch of calculated advantages (V(s') - V(s))
         clip_param (float, optional): PPO clip parameter (clip ratio). Defaults to 0.2.
-        value_loss_coef (float, optional): Coefficient for value loss. Defaults to 0.5.
+        policy_coef (float, optional): Coefficient for policy loss. Defaults to 0.5.
+        value_loss_coef (float, optional): Coefficient for value loss. Defaults to 1.0 - policy_coef
         entropy_coef (float, optional): Coefficient for entropy. Defaults to 0.01.
         epochs (int, optional): Number of optimization epochs. Defaults to 4.
         mini_batch_size (int, optional): Size of mini-batches. Defaults to 16.
@@ -58,12 +59,15 @@ def ppo_update(model, optimizer, states, actions, old_log_probs, returns, advant
             surr2 = pt.clamp(ratio, 1.0 - clip_param, 1.0 + clip_param) * mb_advantages
             policy_loss = -pt.min(surr1, surr2).mean()
 
+
             # calculate loss (MSE) 
             value_loss = pt.nn.functional.mse_loss(value.squeeze(), mb_returns.squeeze())
             entropy = new_dist.entropy().sum(dim=-1).mean()
+
+            value_loss_coef = 1.0 - policy_coef - entropy_coef
             
             # Calculate the total loss
-            loss = policy_loss + value_loss_coef * value_loss - entropy_coef * entropy
+            loss = policy_coef * policy_loss + value_loss_coef * value_loss - entropy_coef * entropy
             
             # optimization step
             optimizer.zero_grad()
