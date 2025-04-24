@@ -65,7 +65,7 @@ class Controller(AbstractController):
         # print(f"Mean: {dist.mean[0, 0]}\n")
         # print(f"Standard Deviation: {dist.stddev[0, 0]}")
 
-        return speed, steer 
+        return speed*7, steer 
 
     def shutdown(self):
         pass

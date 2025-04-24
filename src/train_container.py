@@ -3,6 +3,9 @@ import math
 import numpy as np
 import pyglet
 
+import matplotlib.pyplot as plt
+from matplotlib.patches import FancyArrowPatch
+
 from weap_util.lidar import lidar_to_bitmap
 
 # Global variables for the arrow rendering.
@@ -57,6 +60,34 @@ def _render_callback(env_renderer):
 def train_run(model, env, map_path, map_ext, waypoints, starting_wpts, render_on=True):
     print("Loading map image from:", map_path + map_ext)
     global current_arrow_direction
+
+    # ←–– SET UP MATPLOTLIB INTERACTIVE FIGURE ONCE
+    if render_on:
+        plt.ion()
+        fig, ax = plt.subplots(figsize=(6,6))
+
+        # LiDAR scan points as a scatter
+        scan_scatter = ax.scatter([], [], s=5, c='cyan')
+
+        # Steering arrow: use FancyArrowPatch so we can update it
+        steer_arrow = FancyArrowPatch(
+            posA=(0,0), posB=(0,0),
+            arrowstyle='->', mutation_scale=20, color='red'
+        )
+        ax.add_patch(steer_arrow)
+
+        # Speed label (axes‐fraction coords, top‐left)
+        speed_text = ax.text(
+            0.02, 0.95, '',
+            transform=ax.transAxes,
+            fontsize=12, verticalalignment='top'
+        )
+
+        ax.set_aspect('equal')
+        max_range = 10.0  # match your LiDAR max distance
+        ax.set_xlim(-max_range, max_range)
+        ax.set_ylim(-max_range, max_range)
+
     for i, (sx, sy, stheta) in enumerate(starting_wpts):
         print(f"\nStarting training on track: {map_path + map_ext} with starting position: ({sx}, {sy}, {stheta})")
         model.startup(waypoints)
@@ -83,7 +114,7 @@ def train_run(model, env, map_path, map_ext, waypoints, starting_wpts, render_on
 
         start = time.time()
 
-        time_limit = 10.0  # seconds
+        time_limit = 100.0  # seconds
 
         snapshot = 0
         # Main simulation loop.
@@ -105,20 +136,31 @@ def train_run(model, env, map_path, map_ext, waypoints, starting_wpts, render_on
             current_theta = obs['poses_theta'][0]
             current_arrow_direction = current_theta + steer
 
-            if snapshot > 100:
-                snapshot = 0
+            # ←–– UPDATE MATPLOTLIB PLOT EVERY 10 STEPS
+            if render_on and snapshot % 10 == 0:
+                # --- CORRECTED LiDAR TRANSFORM ---
+                scan = obs['scans'][0]
+                N = len(scan)
+                fov = 2*np.pi
+                # angles from -π/2 to +3π/2 so 0 is straight ahead (+Y)
+                angles = np.linspace(-fov/2, fov/2, N, endpoint=False)
+                # x to the right, y forward
+                xs = -scan * np.sin(angles)
+                ys =  scan * np.cos(angles)
+                scan_scatter.set_offsets(np.column_stack((xs, ys)))
 
-                image = lidar_to_bitmap(scan=obs["scans"][0], channels=1, fov=2 * np.pi, draw_mode="FILL", bg_color="black", draw_center=False)
+                # b) Update steering arrow in robot frame
+                arrow_length = 0.5
+                dx = -arrow_length * math.sin(steer)
+                dy =  arrow_length * math.cos(steer)
+                steer_arrow.set_positions((0,0), (dx,dy))
 
-                polar_vec = lambda angle, mag: np.array([mag * np.cos(angle), mag * np.sin(angle)])
+                # c) Update speed text
+                speed_text.set_text(f"Speed: {speed:.2f}")
 
-                # plt.imshow(image, origin="lower")
-                # x, y = 128, 128
-                # dx, dy = polar_vec(np.pi / 2 + steer, speed) * 10
-                # plt.scatter(x, y)
-                # plt.arrow(x, y, dx, dy, head_width=4, head_length=4, fc='black', ec='black')
-                # plt.show()
-
+                # d) Redraw
+                fig.canvas.draw()
+                fig.canvas.flush_events()
 
         # TRIAL FINISHED
         print("crashed" if obs["collisions"] else "done", end="\n\n\n")

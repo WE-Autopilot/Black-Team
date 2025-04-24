@@ -11,6 +11,7 @@ from weap_util.weap_container import run
 from train_container import train_run, _render_callback
 from f110_gym.envs.base_classes import Integrator
 from f110_gym.envs.f110_env import F110Env
+from test_car_mode import run_test_car
 
 # Monkey-patch PIL.Image.open so that it only returns the red channel (i.e. a single-channel image)
 _orig_open = Image.open
@@ -80,10 +81,14 @@ def normal_mode():
 
 if __name__ == "__main__":
 
-    # Enable training mode or normal execution
-    TRAIN_MODE = True  # Toggle this flag to switch between training and normal execution
+    MODE = 2
 
-    if TRAIN_MODE:
-        training_mode()
-    else:
-        normal_mode()
+    match MODE:
+        case 1:
+            run_test_car(model_path="model.ckpt", sensor_rate_hz=10)
+        case 2:
+            training_mode()
+        case 3:
+            normal_mode()
+        case _:
+            raise ValueError(f"Invalid MODE: {MODE}")
