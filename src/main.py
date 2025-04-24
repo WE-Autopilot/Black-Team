@@ -1,20 +1,21 @@
-from argparse import Namespace
-from controller import Controller
-from weap_util.weap_container import run, train_run
 import os
 import yaml
-import numpy as np
+
 import gym
-from f110_gym.envs.base_classes import Integrator
-from waypoint_manager import WaypointManager
+import numpy as np
 from PIL import Image
+import pyglet
+
+from controller import Controller
+from weap_util.weap_container import run
+from train_container import train_run, _render_callback
+from f110_gym.envs.base_classes import Integrator
+from f110_gym.envs.f110_env import F110Env
+from test_car_mode import run_test_car
 
 # Monkey-patch PIL.Image.open so that it only returns the red channel (i.e. a single-channel image)
 _orig_open = Image.open
 Image.open = lambda *args, **kwargs: _orig_open(*args, **kwargs).convert("RGB").split()[0]
-
-# Enable training mode or normal execution
-TRAIN_MODE = True  # Toggle this flag to switch between training and normal execution
 
 def get_track_names(maps_folder):
     """
@@ -34,30 +35,60 @@ def get_track_names(maps_folder):
 def training_mode():
     """Runs the training mode."""
     controller = Controller()
-    
-    tracks = get_track_names("../assets/maps")
+    maps_folder = "../assets/maps"
+    tracks = get_track_names(maps_folder)
 
-    for track_name, yaml_path, csv_path in tracks:
-        print(f"\nStarting training on track: {track_name}")
+    first_track = tracks[0]
 
-        waypoints = np.loadtxt(csv_path, delimiter=";", skiprows=1, usecols=[0,1,3])[::32]
-        with open(yaml_path) as file:
-            conf_dict = yaml.safe_load(file)
-            conf = Namespace(**conf_dict)
-        
-        for sx, sy, stheta in waypoints:
-            conf_dict["sx"] = sx
-            conf_dict["sy"] = sy
-            conf_dict["stheta"] = stheta
-            train_run(controller, yaml_path, sx, sy, stheta, True)
+    env = gym.make('f110_gym:f110-v0',
+                map=os.path.join(maps_folder, first_track[0]),
+                map_ext=".png",
+                num_agents=1,
+                timestep=0.01,
+                integrator=Integrator.RK4)
+
+    while 1:
+        for track_name, yaml_path, csv_path in tracks:
+            print(f"\nStarting training on track: {track_name}")
+
+            """
+            ! THIS CODE SHOULD NOT WORK DO NOT TOUCH PLEAAAASSEEEE 
+
+            BEWARE
+            """
+            
+            obs, _, _, _ = env.reset(np.array([[0, 0, 0]]))
+            env.render(mode='human')
+            env.update_map(yaml_path, ".png")
+            F110Env.renderer.update_obs(obs)
+            env.add_render_callback(_render_callback)
+            
+            
+            F110Env.renderer.poses = None 
+            F110Env.renderer.batch = pyglet.graphics.Batch()
+            F110Env.renderer.update_map(maps_folder+"/"+track_name, ".png")
+            waypoints = np.loadtxt(csv_path, delimiter=",")
+            starting_wpts = waypoints[::64]
+            print(maps_folder+"/"+track_name)
+
+            train_run(controller, env, maps_folder+"/"+track_name, ".png", waypoints, starting_wpts, True)
+            
 
 def normal_mode():
     """Runs the normal driving mode."""
     controller = Controller()
-    run(controller, "../assets/config.yaml", True)
+    run(controller, "../assets/maps/map0","map0", True)
 
 if __name__ == "__main__":
-    if TRAIN_MODE:
-        training_mode()
-    else:
-        normal_mode()
+
+    MODE = 2
+
+    match MODE:
+        case 1:
+            run_test_car(model_path="model.ckpt", sensor_rate_hz=10)
+        case 2:
+            training_mode()
+        case 3:
+            normal_mode()
+        case _:
+            raise ValueError(f"Invalid MODE: {MODE}")

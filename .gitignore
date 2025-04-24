@@ -4,3 +4,8 @@ __pycache__
 .venv/
 assets/
 filter_columns.py
+
+*.ckpt
+*.h5
+*.mp4
+*.png
