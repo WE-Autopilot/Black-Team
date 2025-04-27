@@ -7,6 +7,7 @@ from PIL import Image
 import pyglet
 
 from controller import Controller
+from training_controller import TrainController
 from weap_util.weap_container import run
 from train_container import train_run, _render_callback
 from f110_gym.envs.base_classes import Integrator
@@ -34,7 +35,7 @@ def get_track_names(maps_folder):
 
 def training_mode():
     """Runs the training mode."""
-    controller = Controller()
+    train_controller = TrainController()
     maps_folder = "../assets/maps"
     tracks = get_track_names(maps_folder)
 
@@ -71,17 +72,17 @@ def training_mode():
             starting_wpts = waypoints[::64]
             print(maps_folder+"/"+track_name)
 
-            train_run(controller, env, maps_folder+"/"+track_name, ".png", waypoints, starting_wpts, True)
+            train_run(train_controller, env, maps_folder+"/"+track_name, ".png", waypoints, starting_wpts, True)
             
 
 def normal_mode():
     """Runs the normal driving mode."""
     controller = Controller()
-    run(controller, "../assets/maps/map0","map0", True)
+    run(controller, "../assets/maps/track12","track12", True)
 
 if __name__ == "__main__":
 
-    MODE = 2
+    MODE = 3
 
     match MODE:
         case 1:

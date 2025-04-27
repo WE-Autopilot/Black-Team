@@ -6,6 +6,7 @@ import torch as pt
 import matplotlib.pyplot as plt
 from matplotlib.patches import FancyArrowPatch
 
+from lidar import Lidar, LidarBlocking
 from sal import SAL
 
 def run_test_car(model_path="model.ckpt", sensor_rate_hz=10):
@@ -18,7 +19,7 @@ def run_test_car(model_path="model.ckpt", sensor_rate_hz=10):
     # 1) Load your SAL model
     sal = SAL()
     sal.load(model_path)
-
+    lidar = LidarBlocking()
     # 2) Build an interactive Matplotlib figure once
     plt.ion()
     fig, ax = plt.subplots(figsize=(6,6))
@@ -42,8 +43,10 @@ def run_test_car(model_path="model.ckpt", sensor_rate_hz=10):
     dt = 1.0 / sensor_rate_hz
     while True:
         # a) Acquire one scan: shape (N,)
-        scan = get_lidar_scan()
+        scan = lidar.get_scan()
 
+        scan = [np.array(scan)]
+        # print(scan, type(scan))
         # b) SAL expects a batch of [1, N], dtype float
         scans_tensor = pt.tensor(scan, dtype=pt.float32)[None, :]
 
