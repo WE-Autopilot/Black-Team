@@ -178,8 +178,7 @@ def create_track():
 
 
 def convert_track(track, track_int, track_ext, iter):
-
-    # converts track to image and saves the centerline as waypoints
+    # 1) Plot & save the map PNG
     fig, ax = plt.subplots()
     fig.set_size_inches(20, 20)
     ax.plot(*track_int.T, color='black', linewidth=3)
@@ -189,47 +188,53 @@ def convert_track(track, track_int, track_ext, iter):
     ax.set_xlim(-180, 300)
     ax.set_ylim(-300, 300)
     plt.axis('off')
-    plt.savefig(args.path + 'maps/map' + str(iter) + '.png', dpi=80)
+    png_path = os.path.join(args.path, 'maps', f'map{iter}.png')
+    plt.savefig(png_path, dpi=80)
+    print('map size:', *fig.canvas.get_width_height())
 
-    map_width, map_height = fig.canvas.get_width_height()
-    print('map size: ', map_width, map_height)
-
-    # transform the track center line into pixel coordinates
-    xy_pixels = ax.transData.transform(track)
-    origin_x_pix = xy_pixels[0, 0]
-    origin_y_pix = xy_pixels[0, 1]
-
-    xy_pixels = xy_pixels - np.array([[origin_x_pix, origin_y_pix]])
-
-    map_origin_x = -origin_x_pix*0.05
-    map_origin_y = -origin_y_pix*0.05
-
-    # convert image using cv2
-    cv_img = cv2.imread(args.path + 'maps/map' + str(iter) + '.png', -1)
-    # convert to bw
+    # 2) Convert that PNG to BW & PGM
+    cv_img = cv2.imread(png_path, -1)
     cv_img_bw = cv2.cvtColor(cv_img, cv2.COLOR_BGR2GRAY)
-    # saving to img
-    cv2.imwrite(args.path + 'maps/map' + str(iter) + '.png', cv_img_bw)
-    cv2.imwrite(args.path + 'maps/map' + str(iter) + '.pgm', cv_img_bw)
+    cv2.imwrite(png_path, cv_img_bw)
+    pgm_path = os.path.join(args.path, 'maps', f'map{iter}.pgm')
+    cv2.imwrite(pgm_path, cv_img_bw)
 
-    # create yaml file
-    yaml = open(args.path + 'maps/map' + str(iter) + '.yaml', 'w')
-    yaml.write('image: map' + str(iter) + '.pgm\n')
-    yaml.write('resolution: 0.062500\n')
-    yaml.write('origin: [' + str(map_origin_x) + ',' + str(map_origin_y) + ', 0.000000]\n')
-    yaml.write('negate: 0\noccupied_thresh: 0.45\nfree_thresh: 0.196')
-    yaml.close()
-    plt.close()
-
+    # 3) Compute angles & write out the centerline CSV
+    xy_pixels = ax.transData.transform(track)
+    origin_x_pix, origin_y_pix = xy_pixels[0]
+    xy_pixels -= np.array([[origin_x_pix, origin_y_pix]])
     path_vecs = xy_pixels - np.roll(xy_pixels, 1, axis=0)
     raw_angles = np.arctan2(*path_vecs.T[::-1])
     angles = (raw_angles + np.roll(raw_angles, 1)) / 2
-    # saving track centerline as a csv in ros coords
-    waypoints_csv = open(path + 'maps/map' + str(iter) + '.csv', 'w')
-    for row, angle in zip(xy_pixels, angles):
-        waypoints_csv.write(str(0.05*row[0]) + ', ' + str(0.05*row[1]) + ', ' + f"{angle:.8f}" + '\n')
-    waypoints_csv.close()
 
+    csv_path = os.path.join(args.path, 'maps', f'map{iter}.csv')
+    with open(csv_path, 'w') as waypoints_csv:
+        for row, angle in zip(xy_pixels, angles):
+            waypoints_csv.write(f"{0.05*row[0]}, {0.05*row[1]}, {angle:.8f}\n")
+
+    # 4) Read the first CSV line for sx, sy, stheta
+    with open(csv_path, 'r') as f:
+        first = f.readline().strip()
+    sx_str, sy_str, stheta_str = [s.strip() for s in first.split(',')]
+    sx, sy, stheta = float(sx_str), float(sy_str), float(stheta_str)
+
+    # 5) Write the YAML (including start pose + map_path)
+    yaml_path = os.path.join(args.path, 'maps', f'map{iter}.yaml')
+    map_origin_x = -origin_x_pix * 0.05
+    map_origin_y = -origin_y_pix * 0.05
+
+    with open(yaml_path, 'w') as yf:
+        yf.write(f"image: map{iter}.pgm\n")
+        yf.write("resolution: 0.062500\n")
+        yf.write(f"origin: [{map_origin_x},{map_origin_y}, 0.000000]\n")
+        yf.write("negate: 0\noccupied_thresh: 0.45\nfree_thresh: 0.196\n")
+        yf.write(f"sx: {sx}\n")
+        yf.write(f"sy: {sy}\n")
+        yf.write(f"stheta: {stheta}\n")
+        yf.write(f"map_path: ../assets/maps/map{iter}\n")
+        yf.write(f"map_ext: .png\n")
+
+    plt.close(fig)
 
 
 if __name__ == '__main__':
