@@ -43,6 +43,12 @@ plt.scatter(*spawn)
 draw_loop_connections(coords, 6)
 plt.show()
 
+plt.cla()
+path_vecs = coords - np.roll(coords, 1, axis=0)
+angles = np.arctan2(*path_vecs.T[::-1])
+plt.plot(angles)
+plt.show()
+
 for i in range(len(coords)):
     coord = coords[i]
     next_coord = coords[(i + 1) % len(coords)]
