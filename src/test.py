@@ -46,7 +46,8 @@ plt.show()
 plt.cla()
 path_vecs = coords - np.roll(coords, 1, axis=0)
 angles = np.arctan2(*path_vecs.T[::-1])
-plt.plot(angles)
+path_angles = angles - np.roll(angles, 1, axis=0)
+plt.plot(path_angles)
 plt.show()
 
 for i in range(len(coords)):
