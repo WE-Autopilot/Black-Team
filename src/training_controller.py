@@ -1,5 +1,5 @@
 import numpy as np
-from weap_util.abstract_controller import AbstractController
+from weap_util.abstract_controller import AbstractModel
 from sal import SAL
 import torch as pt
 import torch.optim as optim
@@ -14,7 +14,7 @@ def addNoise(obs):
     """
     return obs
 
-class TrainController(AbstractController):
+class TrainController(AbstractModel):
         
     def __init__(self, path="model.ckpt") -> None:
         super().__init__()
