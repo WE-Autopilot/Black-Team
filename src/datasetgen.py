@@ -1,4 +1,5 @@
 import numpy as np
+import torch as pt
 import PIL.Image as Image
 from laser_models import ScanSimulator2D
 from weap_util.lidar import lidar_to_bitmap
@@ -28,7 +29,7 @@ parser.add_argument("--num_points", type=int, default=10, help="Specify path to 
 parser.add_argument("--spread", type=float, default=1.45, help="Specify path to read maps (e.g. ./).")
 parser.add_argument("--angle_spread", type=float, default=1.5, help="Specify path to read maps (e.g. ./).")
 parser.add_argument("--lookahead", type=int, default=5, help="Specify path to read maps (e.g. ./).")
-parser.add_argument("--max_scale", type=float, default=2, help="Specify max scale factor.")
+parser.add_argument("--max_noise", type=float, default=10, help="Specify max scale factor.")
 args = parser.parse_args()
 
 
@@ -43,7 +44,11 @@ num_points = args.num_points
 spread = args.spread
 angle_spread = args.angle_spread
 lookahead = args.lookahead
-max_scale = args.max_scale
+max_noise = args.max_noise
+low_kernel = int(num_beams * 0.5)
+high_kernel = int(num_beams * 0.05)
+low_padding = (low_kernel - 1) - (low_kernel - 1) // 2
+high_padding = (high_kernel - 1) - (high_kernel - 1) // 2
 
 map_paths = sorted(glob(f"{maps_path}/*.yaml"))
 scan_sim = ScanSimulator2D(num_beams, fov)
@@ -85,16 +90,23 @@ with hp.File(dataset_path, "w") as file:
 
             points = gen_perp_points(curr_wp, next_wp, num_points=num_points, min_dis=-spread, max_dis=spread)
             dis_angles = np.random.uniform(-angle_spread, angle_spread, num_points)
-            scales = max_scale ** np.random.uniform(-1, 1, num_points)
+            low_noises = pt.nn.functional.avg_pool1d(max_noise / 2 * pt.rand(num_points, num_beams), low_kernel, 1, low_padding).numpy()[:, :num_beams]
+            high_noises = pt.nn.functional.avg_pool1d(max_noise * (2 * pt.rand(num_points, num_beams) - 1), high_kernel, 1, high_padding).numpy()[:, :num_beams]
+            noises = low_noises + high_noises
+            noises = noises * (noises >= 0)
 
-            for point_ind, point, dis_angle, scale in zip(range(num_points), points, dis_angles, scales):
+            for point_ind, point, dis_angle, noise in zip(range(num_points), points, dis_angles, noises):
                 pos_angle = track_angle + dis_angle
                 pose = np.append(point, pos_angle)
                 path_vec = target_wp - point
                 path_angle = np.arctan2(*path_vec[::-1])
-                steer = path_angle - pos_angle
 
-                scan = scan_sim.scan(pose, np.random.default_rng()) * scale
+                steer = path_angle - pos_angle
+                sign = steer / abs(steer)
+                steer = abs(steer) % (2 * np.pi)
+                steer = sign * steer if steer < np.pi else -sign * (2 * np.pi - steer)
+
+                scan = scan_sim.scan(pose, np.random.default_rng()) + noise
 
                 lidar_dataset[start_ind * num_points + point_ind] = scan
                 steer_dataset[start_ind * num_points + point_ind] = steer

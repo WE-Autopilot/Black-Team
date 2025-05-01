@@ -23,7 +23,7 @@ try:
     print(f"Loading backup model on {device}")
 except:
     print(f"Loading blank model on {device}")
-optimizer = AdamW(sal.parameters(), lr=1e-6)
+optimizer = AdamW(sal.parameters(), lr=1e-5)
 dataset = Stage0Dataset("dataset.h5")
 dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
 
